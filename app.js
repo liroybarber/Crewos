@@ -22,7 +22,7 @@ var fbConfig = {
 
   messagingSenderId: "824881537537",
 
-  appId: "1:824881537537:web:cc8a03746624e9
+  appId: "1:824881537537:web:cc8a03746624e9c43f5600"
 
 };
 
