@@ -8,8 +8,16 @@ var MDL = [
   {id:"chair_pct", lbl:"כיסא + אחוזים"}
 ];
 
-var fbConfig = {databaseURL: FIREBASE_URL};
+var fbConfig = {
+
+  apiKey: "test",
+
+  databaseURL: FIREBASE_URL
+
+};
+
 firebase.initializeApp(fbConfig);
+
 var db = firebase.database();
 
 var bizCode = null;
