@@ -567,5 +567,4 @@ var saved = localStorage.getItem(“crewos_biz”);
 if(saved){
 loadBiz(saved);
 }
-})();
 
