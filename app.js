@@ -98,16 +98,10 @@ data: newData
 newBizCode = code;
 document.getElementById(“reg-code-display”).textContent = code;
 document.getElementById(“reg-biz-welcome”).textContent = “ברוך הבא, “+ownerName+”!”;
-showPg(“pg-reg-success”);
-// Set button onclick directly after rendering
-setTimeout(function(){
-var btn = document.getElementById(“enter-after-reg-btn”);
-if(btn) {
-btn.onclick = function(){
-loadBiz(code);
+document.getElementById(“enter-after-reg-btn”).onclick = function(){
+loadBiz(newBizCode);
 };
-}
-}, 100);
+showPg(“pg-reg-success”);
 }).catch(function(e){
 err.textContent=“שגיאה ברישום, נסה שוב”;
 console.log(e);
@@ -574,5 +568,4 @@ if(saved){
 loadBiz(saved);
 }
 })();
-
 
