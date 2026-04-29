@@ -586,15 +586,4 @@ function saveGoal(){S.goal=parseInt(document.getElementById("goal-v").value)||0;
   }
 })();
 
-function createBiz() {
-  var code = Math.floor(1000 + Math.random() * 9000).toString();
 
-  db.ref("businesses/" + code).set({
-    createdAt: Date.now()
-  }).then(function() {
-    document.getElementById("reg-code-display").textContent = code;
-  }).catch(function(e){
-    console.log(e);
-    alert("שגיאה בשמירה");
-  });
-}
