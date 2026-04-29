@@ -10,9 +10,19 @@ var MDL = [
 
 var fbConfig = {
 
-  apiKey: "test",
+  apiKey: "AIzaSyB6Js1Xbas9S_cQ7-Japn12vFGJ8UJ1ous",
 
-  databaseURL: FIREBASE_URL
+  authDomain: "crewos-fc781.firebaseapp.com",
+
+  databaseURL: "https://crewos-fc781-default-rtdb.firebaseio.com",
+
+  projectId: "crewos-fc781",
+
+  storageBucket: "crewos-fc781.firebasestorage.app",
+
+  messagingSenderId: "824881537537",
+
+  appId: "1:824881537537:web:cc8a03746624e9
 
 };
 
