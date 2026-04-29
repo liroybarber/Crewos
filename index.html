@@ -1,31 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-
-  <meta name="viewport" content="width=device-width">
-
-  <meta name="apple-mobile-web-app-capable">
-
-  <meta name="apple-mobile-web-app-title">
-
-  <title>CrewOS</title>
-
-  <link href="https://fonts.googleapis.com" rel="stylesheet">
-
-  <link rel="stylesheet" href="style.css">
-
-  <!-- Firebase -->
-
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-
-  <script src="app.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CrewOS">
+<title>CrewOS</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <!-- SCREEN 1: WELCOME -->
+
 <div id="pg-welcome" class="pg on">
 <div class="cw2">
   <div style="text-align:center;margin-bottom:36px">
@@ -33,35 +23,39 @@
     <div style="font-size:14px;color:var(--dm);margin-top:8px">מערכת ניהול מספרה חכמה</div>
   </div>
   <div style="width:100%;max-width:360px">
-    <button onclick="showPg('pg-enter')" class="bg" style="width:100%;height:54px;font-size:16px;border-radius:14px;margin-bottom:12px">כניסה לעסק קיים</button>
+    <button onclick="showPg('pg-owner-login')" class="bg" style="width:100%;height:54px;font-size:16px;border-radius:14px;margin-bottom:12px">כניסה כבעל עסק</button>
     <button onclick="showPg('pg-register')" class="bg2" style="width:100%;height:54px;font-size:16px;border-radius:14px">רישום עסק חדש</button>
     <div style="text-align:center;margin-top:20px;font-size:11px;color:var(--dm)">CREWOS &copy; 2025</div>
   </div>
 </div>
 </div>
 
-<!-- SCREEN 2: ENTER BUSINESS CODE -->
-<div id="pg-enter" class="pg">
+<!-- SCREEN 2: OWNER LOGIN -->
+
+<div id="pg-owner-login" class="pg">
 <div class="cw2">
   <div style="text-align:center;margin-bottom:28px">
     <div style="font-size:28px;font-weight:900;color:var(--or)">CREWOS</div>
-    <div style="font-size:14px;color:var(--dm);margin-top:6px">הזן קוד עסק</div>
+    <div style="font-size:14px;color:var(--dm);margin-top:6px">כניסה לבעל עסק</div>
   </div>
   <div style="width:100%;max-width:360px">
     <div class="card">
-      <div class="fw"><div class="fl">קוד עסק (4 ספרות)</div>
-        <input type="number" id="biz-code-input" placeholder="1234" inputmode="numeric" maxlength="4" style="font-size:28px;font-weight:800;text-align:center;letter-spacing:8px">
+      <div class="fw"><div class="fl">מספר טלפון</div>
+        <input type="tel" id="owner-phone-input" placeholder="05X-XXXXXXX" inputmode="tel">
       </div>
-      <div class="err" id="biz-code-err"></div>
-      <button onclick="enterBiz()" class="bg" style="width:100%;height:48px;font-size:15px">כניסה</button>
+      <div class="fw"><div class="fl">סיסמה (4 ספרות)</div>
+        <input type="password" id="owner-pin-input" maxlength="4" inputmode="numeric" placeholder="****">
+      </div>
+      <div class="err" id="owner-login-err"></div>
+      <button onclick="ownerLogin()" class="bg" style="width:100%;height:48px;font-size:15px">כניסה</button>
     </div>
     <button onclick="showPg('pg-welcome')" style="width:100%;height:44px;background:transparent;border:none;color:var(--dm);font-size:13px;margin-top:8px">חזור</button>
-    <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--dm)">שכחת את קוד העסק?<br>צור קשר עם מנהל המערכת</div>
   </div>
 </div>
 </div>
 
 <!-- SCREEN 3: REGISTER NEW BUSINESS -->
+
 <div id="pg-register" class="pg">
 <div style="padding:60px 20px 40px">
   <div style="text-align:center;margin-bottom:28px">
@@ -82,6 +76,7 @@
 </div>
 
 <!-- SCREEN 4: REGISTRATION SUCCESS -->
+
 <div id="pg-reg-success" class="pg">
 <div class="cw2">
   <div style="text-align:center;margin-bottom:20px">
@@ -90,18 +85,21 @@
     <div id="reg-biz-welcome" style="font-size:14px;color:var(--dm);margin-top:6px"></div>
   </div>
   <div style="width:100%;max-width:360px">
-    <div class="code-box">
-      <div style="font-size:13px;color:var(--mu);margin-bottom:8px">קוד העסק שלך</div>
-      <div class="code-num" id="reg-code-display">----</div>
-    <input type="hidden" id="reg-code-store" value="">
-      <div style="font-size:12px;color:var(--dm);margin-top:10px">שמור קוד זה! תצטרך אותו בכל כניסה</div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">קוד העסק שלך</div>
+      <div id="reg-biz-code" style="font-size:32px;font-weight:900;color:var(--or);letter-spacing:6px;margin-bottom:12px;text-align:center">----</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">קישור לעובדים</div>
+      <div id="reg-link-display" style="font-size:11px;color:#888;word-break:break-all;background:#111;padding:10px;border-radius:8px;margin-bottom:10px"></div>
+      <button id="copy-reg-link-btn" onclick="copyRegLink()" style="width:100%;height:38px;border-radius:10px;background:#1a1a2a;border:1px solid #8A8AE8;color:#8A8AE8;font-size:13px;font-weight:700">העתק קישור לעובדים</button>
+      <div style="font-size:11px;color:var(--dm);margin-top:8px;text-align:center">שלח את הקישור הזה לעובדים שלך</div>
     </div>
-    <button id="enter-after-reg-btn" class="bg" style="width:100%;height:52px;font-size:16px;border-radius:14px;margin-top:16px">כנס לעסק שלי</button>
+    <button id="enter-after-reg-btn" class="bg" style="width:100%;height:52px;font-size:16px;border-radius:14px;margin-top:12px">כנס לעסק שלי</button>
   </div>
 </div>
 </div>
 
 <!-- SCREEN 5: LOGIN (inside business) -->
+
 <div id="pg-login" class="pg">
 <div class="cw2">
   <div style="text-align:center;margin-bottom:20px">
@@ -134,6 +132,7 @@
 </div>
 
 <!-- OWNER DASHBOARD -->
+
 <div id="pg-owner" class="pg">
   <div class="hdr">
     <div class="hr">
@@ -163,6 +162,7 @@
 </div>
 
 <!-- EMPLOYEE DASHBOARD -->
+
 <div id="pg-emp" class="pg">
   <div class="hdr">
     <div class="hr">
@@ -182,6 +182,7 @@
 </div>
 
 <!-- CHAIR ONLY -->
+
 <div id="pg-chair" class="pg">
   <div class="hdr">
     <div class="hr">
@@ -205,6 +206,7 @@
 </div>
 
 <!-- MODAL: OWNER ENTRY -->
+
 <div class="ov" id="m-owner-entry">
 <div class="sh">
   <div class="shh"><div><div class="sht" id="oe-title">הזנת יום שלי</div></div><button class="xb" onclick="closeM('m-owner-entry')">X</button></div>
@@ -219,6 +221,7 @@
 </div>
 
 <!-- MODAL: EMP ENTRY -->
+
 <div class="ov" id="m-entry">
 <div class="sh">
   <div class="shh"><div><div class="sht" id="et-title">סיכום יום</div><div id="et-sub" style="font-size:12px;color:var(--mu);margin-top:2px"></div></div><button class="xb" onclick="closeM('m-entry')">X</button></div>
@@ -249,6 +252,7 @@
 </div>
 
 <!-- MODAL: EDIT EMP -->
+
 <div class="ov" id="m-edit">
 <div class="sh">
   <div class="shh"><div class="sht">הגדרות עובד</div><button class="xb" onclick="closeM('m-edit')">X</button></div>
@@ -266,6 +270,7 @@
 </div>
 
 <!-- MODAL: ADD EMP -->
+
 <div class="ov" id="m-add">
 <div class="sh">
   <div class="shh"><div class="sht">הוסף עובד חדש</div><button class="xb" onclick="closeM('m-add')">X</button></div>
@@ -279,6 +284,7 @@
 </div>
 
 <!-- MODAL: SERVICE -->
+
 <div class="ov" id="m-svc">
 <div class="sh">
   <div class="shh"><div class="sht" id="svc-title">שירות</div><button class="xb" onclick="closeM('m-svc')">X</button></div>
@@ -289,6 +295,7 @@
 </div>
 
 <!-- MODAL: GOAL -->
+
 <div class="ov" id="m-goal">
 <div class="sh">
   <div class="shh"><div class="sht">יעד חודשי</div><button class="xb" onclick="closeM('m-goal')">X</button></div>
@@ -298,5 +305,6 @@
 </div>
 
 <script src="app.js"></script>
+
 </body>
 </html>
