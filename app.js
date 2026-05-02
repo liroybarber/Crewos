@@ -187,14 +187,23 @@ async function siteLogin() {
       "entered length:", sitePwd.length,
       "match:", (data.sitePassword||"").replace(/\s/g,"") === sitePwd);
 
-    if(!data.sitePassword) {
-      err.textContent = "סיסמת כניסה לא מוגדרת לעסק זה";
+    /* תמיכה בשדות ישנים וחדשים */
+    var storedSite = data.sitePassword || data.sitePin || data.accessPass || "";
+    console.log("[LOGIN] sitePassword:", !!data.sitePassword,
+      "sitePin:", !!data.sitePin,
+      "accessPass:", !!data.accessPass,
+      "storedSite.length:", storedSite.length,
+      "entered.length:", sitePwd.length,
+      "match:", storedSite.replace(/\s/g,"") === sitePwd);
+
+    if(!storedSite) {
+      err.textContent = "סיסמת כניסה לא מוגדרת לעסק זה — רשום עסק מחדש";
       btn.disabled = false;
       return;
     }
 
     /* שלב 3: בדוק סיסמה */
-    if(data.sitePassword.replace(/\s/g,"") !== sitePwd) {
+    if(storedSite.replace(/\s/g,"") !== sitePwd) {
       err.textContent = "סיסמת כניסה שגויה";
       btn.disabled = false;
       return;
@@ -269,22 +278,29 @@ function doLogin(){
   var emp;
 
   if(lSel==="owner"){
-    /* בעל עסק — בדוק ownerPassword בלבד */
-    if(!S||!S.ownerPassword){
-      document.getElementById("pin-err").textContent="שגיאה: ownerPassword חסר, נסה להתחבר מחדש";
+    /* תומך בשדות ישנים וחדשים */
+    var ownerPwd = S.ownerPassword || S.ownerPin || S.accessPass || S.ownerPass || "";
+    correct = ownerPwd.replace(/\s/g,"");
+    console.log("[DOLOGIN] owner | inputCode.length:", inputCode.length,
+      "| ownerPassword field:", !!S.ownerPassword,
+      "| ownerPin field:", !!S.ownerPin,
+      "| correct.length:", correct.length,
+      "| match:", correct === inputCode);
+
+    if(!correct) {
+      document.getElementById("pin-err").textContent="שגיאה: סיסמת בעל עסק לא נמצאה. רשום עסק מחדש.";
       pin=""; rdots(); return;
     }
-    correct = (S.ownerPassword||"").replace(/\s/g,"");
-    console.log("[DOLOGIN] user: owner | inputCode.length:", inputCode.length, "| ownerPassword.length:", correct.length);
   } else {
     emp = S.emps.find(function(e){ return e.id===lSel; });
     if(!emp){ document.getElementById("pin-err").textContent="בחר עובד"; return; }
-    if(!emp.pin){
-      document.getElementById("pin-err").textContent="שגיאה: קוד עובד חסר";
+    correct = (emp.pin||"").replace(/\s/g,"");
+    console.log("[DOLOGIN] emp:", emp.name, "| inputCode.length:", inputCode.length, "| pin.length:", correct.length, "| match:", correct === inputCode);
+
+    if(!correct) {
+      document.getElementById("pin-err").textContent="שגיאה: קוד עובד לא מוגדר";
       pin=""; rdots(); return;
     }
-    correct = (emp.pin||"").replace(/\s/g,"");
-    console.log("[DOLOGIN] user: emp("+emp.name+") | inputCode.length:", inputCode.length, "| pin.length:", correct.length);
   }
 
   if(inputCode === correct){
