@@ -26,7 +26,7 @@ var edId = null, addM = "percent", edM = "percent", edSvc = null, owT = "today";
 var syncTimeout = null;
 var oeCtr = {};
 
-/* -- UTILS -- */
+/* ── UTILS ── */
 function showPg(id) {
   document.querySelectorAll(".pg").forEach(function(p){p.classList.remove("on");});
   document.getElementById(id).classList.add("on");
@@ -52,12 +52,12 @@ function sb(lbl,val,sub,col) {
   return "<div class=st style='border-color:"+col+"33'><div class=lb>"+lbl+"</div><div class=vl style='color:"+col+"'>"+val+"</div>"+(sub?"<div class=sb2>"+sub+"</div>":"")+"</div>";
 }
 
-function defS(bizName, ownerName, ownerPin, sitePin, phone) {
+function defS(bizName, ownerName, sitePassword, ownerPassword, phone) {
   return {
     bizName: bizName||"המספרה שלי",
     ownerName: ownerName||"בעל העסק",
-    ownerPin: ownerPin||"0000",
-    sitePin: sitePin||"0000",
+    sitePassword: sitePassword,
+    ownerPassword: ownerPassword,
     phone: phone||"",
     nid: 3, goal: 0,
     svcs: [{id:"s1",lbl:"תספורת",price:60},{id:"s2",lbl:"זקן",price:40},{id:"s3",lbl:"שניהם",price:90}],
@@ -67,118 +67,118 @@ function defS(bizName, ownerName, ownerPin, sitePin, phone) {
   };
 }
 
-/* -- REGISTRATION -- */
+/* ── REGISTRATION ── */
 function genCode() {
   return String(Math.floor(1000 + Math.random()*9000));
 }
 
 function registerBiz() {
-  var bizName = document.getElementById("reg-biz-name").value.trim();
-  var ownerName = document.getElementById("reg-owner-name").value.trim();
-  var phone = document.getElementById("reg-phone").value.trim();
-  var sitePin = document.getElementById("reg-site-pin").value.trim();
-  var p1 = document.getElementById("reg-pin").value.trim();
-  var p2 = document.getElementById("reg-pin2").value.trim();
-  var err = document.getElementById("reg-err");
+  var bizName     = document.getElementById("reg-biz-name").value.trim();
+  var ownerName   = document.getElementById("reg-owner-name").value.trim();
+  var phone       = document.getElementById("reg-phone").value.trim();
+  var sitePass    = document.getElementById("reg-site-pass").value.trim();
+  var ownerPass   = document.getElementById("reg-owner-pass").value.trim();
+  var ownerPass2  = document.getElementById("reg-owner-pass2").value.trim();
+  var err         = document.getElementById("reg-err");
 
-  if(!bizName){err.textContent="נא להזין שם מספרה";return;}
-  if(!ownerName){err.textContent="נא להזין שם בעל העסק";return;}
-  if(!phone){err.textContent="נא להזין מספר טלפון";return;}
-  if(sitePin.length!==4||isNaN(sitePin)){err.textContent="סיסמת האתר חייבת להיות 4 ספרות";return;}
-  if(p1.length!==4||isNaN(p1)){err.textContent="הסיסמה האישית חייבת להיות 4 ספרות";return;}
-  if(p1!==p2){err.textContent="הסיסמאות האישיות לא תואמות";return;}
-  err.textContent="בודק...";
+  err.textContent = "";
+  if(!bizName)                               { err.textContent="נא להזין שם מספרה"; return; }
+  if(!ownerName)                             { err.textContent="נא להזין שם בעל העסק"; return; }
+  if(!phone)                                 { err.textContent="נא להזין מספר טלפון"; return; }
+  if(sitePass.length!==4||isNaN(sitePass))   { err.textContent="סיסמת הכניסה לעסק חייבת להיות 4 ספרות"; return; }
+  if(ownerPass.length!==4||isNaN(ownerPass)) { err.textContent="סיסמת בעל העסק חייבת להיות 4 ספרות"; return; }
+  if(ownerPass!==ownerPass2)                 { err.textContent="אישור סיסמת בעל העסק לא תואם"; return; }
 
+  err.textContent = "רושם...";
   var phoneKey = phone.replace(/\D/g,"");
+
   db.ref("phones/"+phoneKey).once("value").then(function(snap){
-    if(snap.val()){err.textContent="מספר טלפון כבר רשום במערכת";return;}
-    tryRegister(phoneKey, bizName, ownerName, phone, sitePin, p1, err);
-  }).catch(function(){
-    tryRegister(phoneKey, bizName, ownerName, phone, sitePin, p1, err);
-  });
+    if(snap.val()){ err.textContent="מספר טלפון כבר רשום במערכת"; return; }
+    var code = genCode();
+    var newData = defS(bizName, ownerName, sitePass, ownerPass, phone);
+    db.ref("businesses/"+code).set({
+      bizName: bizName,
+      ownerName: ownerName,
+      phone: phone,
+      createdAt: new Date().toISOString(),
+      data: newData
+    }).then(function(){
+      return db.ref("phones/"+phoneKey).set(code);
+    }).then(function(){
+      bizCode = code;
+      S = newData;
+      try{localStorage.setItem("crewos_biz", code);}catch(e){}
+      try{localStorage.setItem("crewos_cache_"+code, JSON.stringify(S));}catch(e){}
+      document.getElementById("succ-name").textContent = "ברוך הבא, "+ownerName+"!";
+      document.getElementById("succ-biz").textContent = bizName;
+      document.getElementById("succ-phone").textContent = phone;
+      document.getElementById("succ-site-pass").textContent = sitePass;
+      showPg("pg-reg-success");
+    }).catch(function(e){
+      err.textContent="שגיאה ברישום, נסה שוב";
+      console.log(e);
+    });
+  }).catch(function(){ err.textContent="שגיאת חיבור, נסה שוב"; });
 }
 
-function tryRegister(phoneKey, bizName, ownerName, phone, sitePin, ownerPin, err) {
-  var code = genCode();
-  var newData = defS(bizName, ownerName, ownerPin, sitePin, phone);
-  db.ref("businesses/"+code).set({
-    bizName: bizName,
-    ownerName: ownerName,
-    phone: phone,
-    createdAt: new Date().toISOString(),
-    data: newData
-  }).then(function(){
-    return db.ref("phones/"+phoneKey).set(code);
-  }).then(function(){
-    bizCode = code;
-    S = newData;
-    try{localStorage.setItem("crewos_biz", code);}catch(e){}
-    try{localStorage.setItem("crewos_cache_"+code, JSON.stringify(S));}catch(e){}
-    document.getElementById("reg-biz-welcome").textContent = "ברוך הבא, "+ownerName+"!";
-    document.getElementById("succ-phone").textContent = phone;
-    document.getElementById("enter-after-reg-btn").onclick = function(){
-      ses = {role:"owner"};
-      rOwner();
-      showPg("pg-owner");
-    };
-    showPg("pg-reg-success");
-  }).catch(function(e){
-    err.textContent="שגיאה ברישום, נסה שוב";
-    console.log(e);
-  });
-}
+/* ── SITE LOGIN (phone + sitePassword) ── */
+function siteLogin() {
+  var phone    = document.getElementById("login-phone").value.trim().replace(/\D/g,"");
+  var sitePwd  = document.getElementById("login-site-pass").value.trim();
+  var err      = document.getElementById("login-err");
 
-/* -- BIZ LOGIN (phone + site pin) -- */
-function bizLogin() {
-  var phone = document.getElementById("biz-phone-input").value.trim().replace(/\D/g,"");
-  var sitePinInput = document.getElementById("biz-site-pin-input").value.trim();
-  var err = document.getElementById("biz-login-err");
-  if(!phone){err.textContent="נא להזין מספר טלפון";return;}
-  if(sitePinInput.length!==4){err.textContent="נא להזין סיסמת כניסה של 4 ספרות";return;}
+  err.textContent = "";
+  if(!phone)              { err.textContent="נא להזין מספר טלפון"; return; }
+  if(sitePwd.length!==4)  { err.textContent="נא להזין סיסמה של 4 ספרות"; return; }
+
   err.textContent="בודק...";
-
   db.ref("phones/"+phone).once("value").then(function(snap){
     var code = snap.val();
-    if(!code){err.textContent="מספר טלפון לא נמצא";return;}
+    if(!code){ err.textContent="מספר טלפון לא נמצא"; return; }
+
     db.ref("businesses/"+code+"/data").once("value").then(function(snap2){
       var data = snap2.val();
-      if(!data){err.textContent="שגיאה, נסה שוב";return;}
-      if(data.sitePin !== sitePinInput){err.textContent="סיסמת כניסה שגויה";return;}
+      if(!data){ err.textContent="שגיאה, נסה שוב"; return; }
+
+      /* בודקים רק sitePassword */
+      if(data.sitePassword !== sitePwd){ err.textContent="סיסמת כניסה שגויה"; return; }
+
       err.textContent="";
       bizCode = code;
       S = data;
       try{localStorage.setItem("crewos_biz", code);}catch(e){}
       try{localStorage.setItem("crewos_cache_"+code, JSON.stringify(S));}catch(e){}
       document.getElementById("biz-name-display").textContent = S.bizName||"המספרה";
-      lSel = "owner"; pin = "";
+      lSel="owner"; pin="";
       renderLogin();
       showPg("pg-login");
     });
-  }).catch(function(e){err.textContent="שגיאת חיבור, נסה שוב";});
+  }).catch(function(){ err.textContent="שגיאת חיבור, נסה שוב"; });
 }
 
-/* -- SELECT USER & PIN LOGIN -- */
+/* ── SELECT USER ── */
 function renderLogin() {
   if(!S) return;
   var h="";
   S.emps.forEach(function(e){
-    var sel = lSel===e.id;
+    var sel=lSel===e.id;
     h+="<div class=eo id='lo-"+e.id+"' onclick='selUser("+e.id+")' style='border-color:"+(sel?e.color:"#222")+";background:"+(sel?e.color+"22":"#161616")+"'>";
     h+="<div class=av style='width:40px;height:40px;background:"+e.color+"22;border:2px solid "+e.color+";font-size:13px;color:"+e.color+"'>"+e.av+"</div>";
     h+="<div><div style='font-weight:700;font-size:14px'>"+e.name+"</div><div style='color:#555;font-size:11px'>"+e.role+"</div></div></div>";
   });
   document.getElementById("login-emp-list").innerHTML=h;
-  var ownerEl = document.getElementById("lo-owner");
-  ownerEl.style.borderColor = lSel==="owner"?"var(--or)":"#222";
-  ownerEl.style.background = lSel==="owner"?"rgba(232,120,42,.1)":"#161616";
+  var oel=document.getElementById("lo-owner");
+  oel.onclick=function(){selUser("owner");};
+  oel.style.borderColor=lSel==="owner"?"var(--or)":"#222";
+  oel.style.background=lSel==="owner"?"rgba(232,120,42,.1)":"#161616";
   updHint(); rdots();
 }
 
 function selUser(id){
   lSel=id; pin="";
-  var ownerEl = document.getElementById("lo-owner");
-  ownerEl.style.borderColor = id==="owner"?"var(--or)":"#222";
-  ownerEl.style.background = id==="owner"?"rgba(232,120,42,.1)":"#161616";
+  var oel=document.getElementById("lo-owner");
+  oel.style.borderColor=id==="owner"?"var(--or)":"#222";
+  oel.style.background=id==="owner"?"rgba(232,120,42,.1)":"#161616";
   S.emps.forEach(function(e){
     var el=document.getElementById("lo-"+e.id); if(!el)return;
     el.style.borderColor=id===e.id?e.color:"#222";
@@ -190,8 +190,8 @@ function selUser(id){
 
 function updHint(){
   var h=document.getElementById("login-hint");
-  if(lSel==="owner"){h.textContent="קוד בעל עסק";}
-  else{var e=S.emps.find(function(x){return x.id===lSel;}); h.textContent=e?"קוד "+e.name:"בחר מישהו";}
+  if(lSel==="owner") h.textContent="סיסמת בעל העסק";
+  else{ var e=S.emps.find(function(x){return x.id===lSel;}); h.textContent=e?"קוד "+e.name:"בחר מישהו"; }
 }
 function rdots(){
   for(var i=0;i<4;i++) document.getElementById("d"+i).className="dt"+(pin.length>i?" on":"");
@@ -201,28 +201,41 @@ function pk(n){if(pin.length<4){pin+=n;rdots();}}
 function pdel(){pin=pin.slice(0,-1);rdots();}
 
 function doLogin(){
-  var emp = lSel!=="owner" ? S.emps.find(function(e){return e.id===lSel;}) : null;
-  var ok = lSel==="owner" ? S.ownerPin : (emp?emp.pin:"----");
-  if(pin===ok){
-    ses = lSel==="owner" ? {role:"owner"} : {role:"emp",eid:lSel};
+  var correct;
+  if(lSel==="owner"){
+    /* בעל עסק מזין ownerPassword בלבד */
+    correct = S.ownerPassword;
+  } else {
+    var emp=S.emps.find(function(e){return e.id===lSel;});
+    if(!emp){ document.getElementById("pin-err").textContent="בחר עובד"; return; }
+    correct = emp.pin;
+  }
+
+  if(pin===correct){
     pin="";
-    if(ses.role==="owner"){rOwner();showPg("pg-owner");}
-    else if(emp&&emp.pm==="chair"){
-      var av=document.getElementById("chair-av");
-      av.textContent=emp.av; av.style.background=emp.color+"22";
-      av.style.border="2px solid "+emp.color; av.style.color=emp.color;
-      document.getElementById("chair-name").textContent=emp.name;
-      document.getElementById("chair-rent").textContent="\u20AA"+(emp.cr||0);
-      showPg("pg-chair");
-    }else{rEmp();showPg("pg-emp");}
-  }else{
+    if(lSel==="owner"){
+      ses={role:"owner"};
+      rOwner(); showPg("pg-owner");
+    } else {
+      var emp2=S.emps.find(function(e){return e.id===lSel;});
+      ses={role:"emp",eid:lSel};
+      if(emp2.pm==="chair"){
+        var av=document.getElementById("chair-av");
+        av.textContent=emp2.av; av.style.background=emp2.color+"22";
+        av.style.border="2px solid "+emp2.color; av.style.color=emp2.color;
+        document.getElementById("chair-name").textContent=emp2.name;
+        document.getElementById("chair-rent").textContent="\u20AA"+(emp2.cr||0);
+        showPg("pg-chair");
+      } else { rEmp(); showPg("pg-emp"); }
+    }
+  } else {
     document.getElementById("pin-err").textContent="קוד שגוי";
     setTimeout(function(){document.getElementById("pin-err").textContent="";},1500);
     pin=""; rdots();
   }
 }
 
-/* -- CALC -- */
+/* ── CALC ── */
 function calc(list,emp){
   var gross=0,es=0,tips=0,hpay=0;
   list.forEach(function(e){
@@ -240,7 +253,7 @@ function calc(list,emp){
   return{gross:gross,es:es,os:os,hpay:hpay};
 }
 
-/* -- OWNER DASHBOARD -- */
+/* ── OWNER DASHBOARD ── */
 function rOwner(){
   document.getElementById("ow-date").textContent=S.bizName+" - "+new Date().toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"});
   var tt=0,mt=0,om=0,tc=0;
@@ -262,6 +275,7 @@ function rOwner(){
     sb("ביטולים",tc,"היום","#E06060");
   rOwTab(owT);
 }
+
 function owTab(t){
   owT=t;
   ["today","emps","report","svcs"].forEach(function(x){document.getElementById("t-"+x).style.display=x===t?"":"none";});
@@ -277,6 +291,7 @@ function rOwTab(t){
   else if(t==="report")rReport();
   else if(t==="svcs")rSvcs();
 }
+
 function rToday(){
   var h="<div class=sl>סיכום יום זה</div>";
   var ownerTe=(S.ownerEntries||{})[td()];
@@ -300,6 +315,7 @@ function rToday(){
   });
   document.getElementById("t-today").innerHTML=h;
 }
+
 function rEmps(){
   var h="";
   S.emps.forEach(function(e){
@@ -321,7 +337,7 @@ function rEmps(){
     h+="<button onclick='openEditModal("+e.id+")' style='flex:1;height:38px;border-radius:10px;background:#1E1E1E;border:1px solid #2A2A2A;color:#888;font-size:12px'>הגדרות</button>";
     if(!isC){
       h+="<button onclick='openEntry("+e.id+")' style='flex:2;height:38px;border-radius:10px;background:"+(hasT?"#2a2a1a":e.color+"22")+";border:1px solid "+(hasT?"#444":e.color)+";color:"+(hasT?"#888":e.color)+";font-size:13px;font-weight:700'>"+(hasT?"עדכן יום":"הזן יום")+"</button>";
-    }else{
+    } else {
       h+="<div style='flex:2;height:38px;border-radius:10px;background:#1a1a1a;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-size:12px;color:#555'>כיסא בלבד</div>";
     }
     h+="</div></div>";
@@ -329,6 +345,7 @@ function rEmps(){
   h+="<button onclick='openM(\"m-add\")' style='width:100%;height:46px;border-radius:12px;background:transparent;border:1px solid #E8782A;color:#E8782A;font-size:14px;font-weight:700;margin-top:4px'>+ הוסף עובד</button>";
   document.getElementById("t-emps").innerHTML=h;
 }
+
 function rReport(){
   var mt=0,om=0;
   S.emps.forEach(function(e){var all=Object.values(S.entries[e.id]||{}),r=calc(all,e);mt+=r.gross;om+=r.os;if(e.pm==="chair"||e.pm==="chair_pct")om+=(e.cr||0);});
@@ -351,45 +368,57 @@ function rReport(){
   var mn=new Date().toLocaleDateString("he-IL",{month:"long",year:"numeric"});
   document.getElementById("t-report").innerHTML="<div class=card><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px'><div><div style='font-size:14px;font-weight:700'>סיכום חודש</div><div style='font-size:11px;color:#555'>"+mn+"</div></div><button onclick='openM(\"m-goal\")' style='background:#1E1E1E;border:1px solid #E8782A;color:#E8782A;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700'>יעד</button></div><div class=stats>"+sb("סה\"כ","\u20AA"+mt,"","#E8782A")+sb("רווח שלך","\u20AA"+om,"","#5ABFA0")+"</div></div>"+gH+cH+cpH;
 }
+
 function rSvcs(){
   var h="<div class=sl>שירותים ומחירים</div><div class=card>";
   S.svcs.forEach(function(s){
     h+="<div class=smr><div><div style='font-weight:700'>"+s.lbl+"</div><div style='color:#E8782A;font-size:12px'>\u20AA"+s.price+"</div></div>";
     h+="<div style='display:flex;gap:8px'><button class=ib style='background:#1a1a2a;color:#8a8ae8' onclick='openEditSvc(\""+s.id+"\")'>עריכה</button><button class=ib style='background:#2a1010;color:#E06060' onclick='delSvc(\""+s.id+"\")'>מחק</button></div></div>";
   });
-  h+="</div><button onclick='openM(\"m-svc\")' style='width:100%;height:46px;border-radius:12px;background:transparent;border:1px solid #E8782A;color:#E8782A;font-size:14px;font-weight:700'>+ הוסף שירות</button>";
+  h+="</div><button onclick='openAddSvc()' style='width:100%;height:46px;border-radius:12px;background:transparent;border:1px solid #E8782A;color:#E8782A;font-size:14px;font-weight:700'>+ הוסף שירות</button>";
   h+="<div style='margin-top:20px'></div><div class=sl>הגדרות בעל עסק</div><div class=card>";
-  h+="<div class=fw><div class=fl>שנה סיסמת אתר (4 ספרות)</div><input type='password' id='owner-site-pin-new' maxlength='4' inputmode='numeric' placeholder='סיסמה חדשה'></div>";
-  h+="<div class=fw><div class=fl>שנה סיסמה אישית (4 ספרות)</div><input type='password' id='owner-pin-new' maxlength='4' inputmode='numeric' placeholder='סיסמה חדשה'></div>";
-  h+="<div class=fw><div class=fl>אשר סיסמה אישית</div><input type='password' id='owner-pin-confirm' maxlength='4' inputmode='numeric' placeholder='אשר'></div>";
-  h+="<div id='owner-pin-msg' style='font-size:12px;min-height:18px;margin-bottom:10px'></div>";
-  h+="<button onclick='changeOwnerPins()' class=bg style='width:100%;height:44px;border-radius:12px;font-size:14px'>שמור שינויים</button></div>";
+  h+="<div style='font-size:12px;color:#888;margin-bottom:12px'>סיסמת הכניסה לעסק (לכולם): <b style='color:#E8782A'>****</b><br>שנה סיסמת כניסה לעסק:</div>";
+  h+="<div class=fw><div class=fl>סיסמת כניסה חדשה</div><input type='password' id='new-site-pass' maxlength='4' inputmode='numeric' placeholder='****'></div>";
+  h+="<div class=fw><div class=fl>אשר סיסמת כניסה</div><input type='password' id='new-site-pass2' maxlength='4' inputmode='numeric' placeholder='****'></div>";
+  h+="<div id='site-pass-msg' style='font-size:12px;min-height:16px;margin-bottom:8px'></div>";
+  h+="<button onclick='changeSitePass()' class=bg style='width:100%;height:42px;border-radius:12px;font-size:14px;margin-bottom:16px'>שמור סיסמת כניסה</button>";
+  h+="<div style='border-top:1px solid #2a2a2a;padding-top:14px;font-size:12px;color:#888;margin-bottom:12px'>שנה סיסמת בעל עסק:</div>";
+  h+="<div class=fw><div class=fl>סיסמה אישית חדשה</div><input type='password' id='new-owner-pass' maxlength='4' inputmode='numeric' placeholder='****'></div>";
+  h+="<div class=fw><div class=fl>אשר סיסמה אישית</div><input type='password' id='new-owner-pass2' maxlength='4' inputmode='numeric' placeholder='****'></div>";
+  h+="<div id='owner-pass-msg' style='font-size:12px;min-height:16px;margin-bottom:8px'></div>";
+  h+="<button onclick='changeOwnerPass()' class=bg style='width:100%;height:42px;border-radius:12px;font-size:14px'>שמור סיסמת בעל עסק</button></div>";
   document.getElementById("t-svcs").innerHTML=h;
 }
-function changeOwnerPins(){
-  var sp=document.getElementById("owner-site-pin-new").value.trim();
-  var np=document.getElementById("owner-pin-new").value.trim();
-  var cp=document.getElementById("owner-pin-confirm").value.trim();
-  var msg=document.getElementById("owner-pin-msg");
-  var changed=false;
-  if(sp.length===4&&!isNaN(sp)){S.sitePin=sp;changed=true;}
-  if(np.length===4&&!isNaN(np)){
-    if(np!==cp){msg.style.color="#E06060";msg.textContent="הסיסמאות האישיות לא תואמות";return;}
-    S.ownerPin=np;changed=true;
-  }
-  if(!changed){msg.style.color="#E06060";msg.textContent="לא הוזנה סיסמה לשינוי";return;}
-  sv();
-  msg.style.color="#5ABFA0";msg.textContent="נשמר!";
+
+function changeSitePass(){
+  var np=document.getElementById("new-site-pass").value.trim();
+  var cp=document.getElementById("new-site-pass2").value.trim();
+  var msg=document.getElementById("site-pass-msg");
+  if(np.length!==4||isNaN(np)){msg.style.color="#E06060";msg.textContent="סיסמה חייבת להיות 4 ספרות";return;}
+  if(np!==cp){msg.style.color="#E06060";msg.textContent="הסיסמאות לא תואמות";return;}
+  S.sitePassword=np; sv();
+  msg.style.color="#5ABFA0"; msg.textContent="סיסמת כניסה עודכנה!";
   setTimeout(function(){msg.textContent="";},3000);
 }
 
-/* -- OWNER ENTRY -- */
+function changeOwnerPass(){
+  var np=document.getElementById("new-owner-pass").value.trim();
+  var cp=document.getElementById("new-owner-pass2").value.trim();
+  var msg=document.getElementById("owner-pass-msg");
+  if(np.length!==4||isNaN(np)){msg.style.color="#E06060";msg.textContent="סיסמה חייבת להיות 4 ספרות";return;}
+  if(np!==cp){msg.style.color="#E06060";msg.textContent="הסיסמאות לא תואמות";return;}
+  S.ownerPassword=np; sv();
+  msg.style.color="#5ABFA0"; msg.textContent="סיסמת בעל עסק עודכנה!";
+  setTimeout(function(){msg.textContent="";},3000);
+}
+
+/* ── OWNER ENTRY ── */
 function openOwnerEntry(){
   var ex=(S.ownerEntries||{})[td()];
   oeCtr={};
   S.svcs.forEach(function(s){oeCtr[s.id]=ex?((ex.svcs||[]).find(function(x){return x.id===s.id;})||{cnt:0}).cnt:0;});
   document.getElementById("oe-title").textContent="הזנת יום שלי - "+new Date().toLocaleDateString("he-IL");
-  rOwnerEntrySvcs();openM("m-owner-entry");
+  rOwnerEntrySvcs(); openM("m-owner-entry");
 }
 function rOwnerEntrySvcs(){
   var html="";
@@ -397,12 +426,14 @@ function rOwnerEntrySvcs(){
     html+="<div class=sr><div><div style='font-size:14px;font-weight:600'>"+s.lbl+"</div><div style='color:#555;font-size:11px'>\u20AA"+s.price+" / יחידה</div></div>";
     html+="<div class=cr><button class='cb m' onclick='adjOE(\""+s.id+"\",-1)'>-</button><span class=cv id='oecv-"+s.id+"'>"+(oeCtr[s.id]||0)+"</span><button class='cb p' onclick='adjOE(\""+s.id+"\",1)'>+</button></div></div>";
   });
-  document.getElementById("oe-svcs").innerHTML=html;updOETot();
+  document.getElementById("oe-svcs").innerHTML=html; updOETot();
 }
 function adjOE(id,d){oeCtr[id]=Math.max(0,(oeCtr[id]||0)+d);document.getElementById("oecv-"+id).textContent=oeCtr[id];updOETot();}
 function updOETot(){
-  var cnt=0,amt=0;S.svcs.forEach(function(s){cnt+=oeCtr[s.id]||0;amt+=(oeCtr[s.id]||0)*s.price;});
-  document.getElementById("oe-tcnt").textContent=cnt;document.getElementById("oe-tamt").textContent="\u20AA"+amt;
+  var cnt=0,amt=0;
+  S.svcs.forEach(function(s){cnt+=oeCtr[s.id]||0;amt+=(oeCtr[s.id]||0)*s.price;});
+  document.getElementById("oe-tcnt").textContent=cnt;
+  document.getElementById("oe-tamt").textContent="\u20AA"+amt;
   var b=document.getElementById("oe-save");b.disabled=cnt===0;b.style.opacity=cnt===0?".4":"1";
 }
 function saveOwnerEntry(){
@@ -410,10 +441,10 @@ function saveOwnerEntry(){
   var ts=svcs.reduce(function(s,x){return s+x.cnt;},0),tot=svcs.reduce(function(s,x){return s+x.cnt*x.price;},0);
   if(!S.ownerEntries)S.ownerEntries={};
   S.ownerEntries[td()]={date:td(),svcs:svcs,totalSvcs:ts,total:tot};
-  sv();closeM("m-owner-entry");rOwner();
+  sv(); closeM("m-owner-entry"); rOwner();
 }
 
-/* -- EMPLOYEE -- */
+/* ── EMPLOYEE ── */
 function rEmp(){
   var e=S.emps.find(function(x){return x.id===ses.eid;});if(!e)return;
   var av=document.getElementById("emp-av");
@@ -436,13 +467,13 @@ function rEmp(){
   sorted.forEach(function(en){
     var er=calc([en],e),ds=en.date?new Date(en.date).toLocaleDateString("he-IL",{weekday:"short",day:"numeric",month:"short"}):"--";
     var sm=(en.svcs||[]).filter(function(s){return s.cnt>0;}).map(function(s){return s.lbl+" x"+s.cnt;}).join(" | ");
-    var c2=en.cancels||0,t=en.tip||0,hrs=en.hrs||0;
-    hist+="<div class=card><div style='display:flex;justify-content:space-between;align-items:center'><div><div style='font-weight:700;font-size:13px'>"+ds+"</div><div style='color:#555;font-size:11px;margin-top:2px'>"+sm+(hrs?" "+hrs+"h":"")+(c2?" ביטולים:"+c2:"")+(t?" טיפ:"+t:"")+"</div></div><div style='text-align:left'><div style='color:#E8782A;font-weight:800;font-size:15px'>\u20AA"+Math.round(er.es)+"</div><div style='color:#444;font-size:10px'>"+en.totalSvcs+" שירותים</div></div></div></div>";
+    var c2=en.cancels||0,t=en.tip||0,h=en.hrs||0;
+    hist+="<div class=card><div style='display:flex;justify-content:space-between;align-items:center'><div><div style='font-weight:700;font-size:13px'>"+ds+"</div><div style='color:#555;font-size:11px;margin-top:2px'>"+sm+(h?" "+h+"h":"")+(c2?" ביטולים:"+c2:"")+(t?" טיפ:"+t:"")+"</div></div><div style='text-align:left'><div style='color:#E8782A;font-weight:800;font-size:15px'>\u20AA"+Math.round(er.es)+"</div><div style='color:#444;font-size:10px'>"+en.totalSvcs+" שירותים</div></div></div></div>";
   });
   document.getElementById("emp-hist").innerHTML=hist;
 }
 
-/* -- ENTRY MODAL -- */
+/* ── ENTRY MODAL ── */
 function openEntry(eid){
   eEid=eid>0?eid:(ses.role==="emp"?ses.eid:null);if(!eEid)return;
   var e=S.emps.find(function(x){return x.id===eEid;});if(!e)return;
@@ -459,7 +490,7 @@ function openEntry(eid){
     hw.innerHTML="<div class=xb2 style='background:#0d0d1a;border:1px solid #202060;margin-bottom:10px'><div><div style='font-size:13px;font-weight:700;color:#6090E0'>שעות עבודה</div><div style='font-size:11px;color:#404080;margin-top:1px'>"+(e.hr||0)+" \u20AA לשעה</div></div><div class=cr><button class='cb mb' onclick='adjH(-1)'>-</button><span id=e-hrs style='color:#6090E0;font-weight:800;font-size:18px;min-width:36px;text-align:center'>"+eHrs+"</span><button class='cb pb' onclick='adjH(1)'>+</button></div></div>";
     document.getElementById("e-hrow").style.display="flex";
   }else{hw.innerHTML="";document.getElementById("e-hrow").style.display="none";}
-  rEntrySvcs();openM("m-entry");
+  rEntrySvcs(); openM("m-entry");
 }
 function rEntrySvcs(){
   var html="";
@@ -467,18 +498,21 @@ function rEntrySvcs(){
     html+="<div class=sr><div><div style='font-size:14px;font-weight:600'>"+s.lbl+"</div><div style='color:#555;font-size:11px'>\u20AA"+s.price+" / יחידה</div></div>";
     html+="<div class=cr><button class='cb m' onclick='adjS(\""+s.id+"\",-1)'>-</button><span class=cv id='cv-"+s.id+"'>"+(eCtr[s.id]||0)+"</span><button class='cb p' onclick='adjS(\""+s.id+"\",1)'>+</button></div></div>";
   });
-  document.getElementById("e-svcs").innerHTML=html;updTot();
+  document.getElementById("e-svcs").innerHTML=html; updTot();
 }
 function adjS(id,d){eCtr[id]=Math.max(0,(eCtr[id]||0)+d);document.getElementById("cv-"+id).textContent=eCtr[id];updTot();}
 function adjC(d){eCan=Math.max(0,eCan+d);document.getElementById("e-cancel").textContent=eCan;updTot();}
 function adjT(d){eTip=Math.max(0,eTip+d);document.getElementById("e-tip").textContent=eTip;updTot();}
 function adjH(d){eHrs=Math.max(0,eHrs+d);var el=document.getElementById("e-hrs");if(el)el.textContent=eHrs;updTot();}
 function updTot(){
-  var cnt=0,amt=0;S.svcs.forEach(function(s){cnt+=eCtr[s.id]||0;amt+=(eCtr[s.id]||0)*s.price;});
+  var cnt=0,amt=0;
+  S.svcs.forEach(function(s){cnt+=eCtr[s.id]||0;amt+=(eCtr[s.id]||0)*s.price;});
   var e=S.emps.find(function(x){return x.id===eEid;})||{};
   var hp=e.pm==="hourly"?eHrs*(e.hr||0):0;
-  document.getElementById("e-tcnt").textContent=cnt;document.getElementById("e-tcan").textContent=eCan;
-  document.getElementById("e-ttip").textContent=eTip;document.getElementById("e-tamt").textContent="\u20AA"+amt;
+  document.getElementById("e-tcnt").textContent=cnt;
+  document.getElementById("e-tcan").textContent=eCan;
+  document.getElementById("e-ttip").textContent=eTip;
+  document.getElementById("e-tamt").textContent="\u20AA"+amt;
   var hr=document.getElementById("e-hpay");if(hr)hr.textContent="\u20AA"+hp;
   var ok=cnt>0||eCan>0||eTip>0||eHrs>0;
   var b=document.getElementById("e-save");b.disabled=!ok;b.style.opacity=ok?"1":".4";
@@ -488,14 +522,16 @@ function saveEntry(){
   var ts=svcs.reduce(function(s,x){return s+x.cnt;},0),tot=svcs.reduce(function(s,x){return s+x.cnt*x.price;},0);
   if(!S.entries[eEid])S.entries[eEid]={};
   S.entries[eEid][td()]={date:td(),svcs:svcs,totalSvcs:ts,total:tot,cancels:eCan,tip:eTip,hrs:eHrs};
-  sv();closeM("m-entry");if(ses.role==="owner")rOwner();else rEmp();
+  sv(); closeM("m-entry"); if(ses.role==="owner")rOwner();else rEmp();
 }
 
-/* -- EDIT EMP -- */
+/* ── EDIT EMP ── */
 function openEditModal(id){
   edId=id;var e=S.emps.find(function(x){return x.id===id;});if(!e)return;
-  document.getElementById("ed-name").value=e.name;document.getElementById("ed-role").value=e.role;document.getElementById("ed-pin").value="";
-  edM=e.pm;rEdMdl();openM("m-edit");
+  document.getElementById("ed-name").value=e.name;
+  document.getElementById("ed-role").value=e.role;
+  document.getElementById("ed-pin").value="";
+  edM=e.pm; rEdMdl(); openM("m-edit");
 }
 function rEdMdl(){
   var e=S.emps.find(function(x){return x.id===edId;})||{};
@@ -532,10 +568,10 @@ function saveEdit(){
   var eh=document.getElementById("ef-hr");if(eh)e.hr=parseInt(eh.value)||0;
   var ec=document.getElementById("ef-cr");if(ec)e.cr=parseInt(ec.value)||0;
   e.sp=e.sp||{};S.svcs.forEach(function(s){var el=document.getElementById("sp-"+s.id);if(el)e.sp[s.id]=parseInt(el.value)||0;});
-  sv();closeM("m-edit");rOwner();
+  sv(); closeM("m-edit"); rOwner();
 }
 
-/* -- ADD EMP -- */
+/* ── ADD EMP ── */
 function openAddModal(){addM="percent";document.getElementById("ad-name").value="";document.getElementById("ad-role").value="";document.getElementById("ad-pin").value="";rAddMdl();openM("m-add");}
 function rAddMdl(){
   var h="";MDL.forEach(function(m){h+="<div class='mo"+(addM===m.id?" on":"")+"' onclick='setAdM(\""+m.id+"\")'><span style='font-size:14px'>"+m.lbl+"</span></div>";});
@@ -557,17 +593,80 @@ function saveAdd(){
   var ap=document.getElementById("af-pct");if(ap)e.pct=parseInt(ap.value)||50;
   var ah=document.getElementById("af-hr");if(ah)e.hr=parseInt(ah.value)||0;
   var ac=document.getElementById("af-cr");if(ac)e.cr=parseInt(ac.value)||0;
-  S.emps.push(e);sv();closeM("m-add");renderLogin();rOwner();
+  S.emps.push(e); sv(); closeM("m-add"); renderLogin(); rOwner();
 }
 
-/* -- SERVICES -- */
-function openEditSvc(id){edSvc=id;var s=S.svcs.find(function(x){return x.id===id;});if(!s)return;document.getElementById("svc-title").textContent="עריכת שירות";document.getElementById("sv-name").value=s.lbl;document.getElementById("sv-price").value=s.price;openM("m-svc");}
-function openAddSvc(){edSvc=null;document.getElementById("svc-title").textContent="הוסף שירות";document.getElementById("sv-name").value="";document.getElementById("sv-price").value="";openM("m-svc");}
-function saveSvc(){var n=document.getElementById("sv-name").value.trim(),pr=parseInt(document.getElementById("sv-price").value)||0;if(!n)return;if(edSvc){var s=S.svcs.find(function(x){return x.id===edSvc;});if(s){s.lbl=n;s.price=pr;}}else{S.svcs.push({id:"s"+Date.now(),lbl:n,price:pr});}sv();closeM("m-svc");rSvcs();}
-function delSvc(id){S.svcs=S.svcs.filter(function(s){return s.id!==id;});sv();rSvcs();}
-function saveGoal(){S.goal=parseInt(document.getElementById("goal-v").value)||0;sv();closeM("m-goal");rReport();}
+/* ── SERVICES ── */
+function openAddSvc() {
+  edSvc = null;
+  document.getElementById("svc-title").textContent = "הוסף שירות";
+  document.getElementById("sv-name").value = "";
+  document.getElementById("sv-price").value = "";
+  document.getElementById("sv-err").textContent = "";
+  openM("m-svc");
+}
 
-/* -- INIT -- */
+function openEditSvc(id) {
+  var s = S.svcs.find(function(x){ return x.id === id; });
+  if(!s) return;
+  edSvc = id;
+  document.getElementById("svc-title").textContent = "עריכת שירות";
+  document.getElementById("sv-name").value = s.lbl;
+  document.getElementById("sv-price").value = s.price;
+  document.getElementById("sv-err").textContent = "";
+  openM("m-svc");
+}
+
+function saveSvc() {
+  var n = document.getElementById("sv-name").value.trim();
+  var pr = parseInt(document.getElementById("sv-price").value);
+  var errEl = document.getElementById("sv-err");
+  if(!n) { errEl.textContent = "נא להזין שם שירות"; return; }
+  if(isNaN(pr) || pr < 0) { errEl.textContent = "נא להזין מחיר תקין"; return; }
+  errEl.textContent = "";
+  if(edSvc) {
+    var s = S.svcs.find(function(x){ return x.id === edSvc; });
+    if(s) { s.lbl = n; s.price = pr; }
+  } else {
+    S.svcs.push({ id: "s" + Date.now(), lbl: n, price: pr });
+  }
+  sv();
+  closeM("m-svc");
+  rSvcs();
+}
+
+function delSvc(id) {
+  if(!confirm("למחוק שירות זה?")) return;
+  S.svcs = S.svcs.filter(function(s){ return s.id !== id; });
+  sv();
+  rSvcs();
+}
+
+function saveGoal(){ S.goal=parseInt(document.getElementById("goal-v").value)||0; sv(); closeM("m-goal"); rReport(); }
+
+/* ── INIT ── */
 (function(){
-  showPg("pg-welcome");
+  document.getElementById("btn-go-login").onclick    = function(){ showPg("pg-site-login"); };
+  document.getElementById("btn-go-register").onclick = function(){ showPg("pg-register"); };
+  document.getElementById("login-btn-submit").onclick = function(){ siteLogin(); };
+  document.getElementById("login-back").onclick      = function(){ showPg("pg-welcome"); };
+  document.getElementById("reg-btn").onclick         = function(){ registerBiz(); };
+  document.getElementById("reg-back").onclick        = function(){ showPg("pg-welcome"); };
+  document.getElementById("succ-enter-btn").onclick  = function(){
+    ses={role:"owner"}; rOwner(); showPg("pg-owner");
+  };
+
+  /* Auto-login if saved */
+  var saved = localStorage.getItem("crewos_biz");
+  if(saved){
+    try{ var c=localStorage.getItem("crewos_cache_"+saved); if(c)S=JSON.parse(c); }catch(e){}
+    db.ref("businesses/"+saved+"/data").once("value").then(function(snap){
+      var data=snap.val();
+      if(data){ S=data; bizCode=saved; try{localStorage.setItem("crewos_cache_"+saved,JSON.stringify(S));}catch(e){} }
+      if(S&&bizCode){
+        document.getElementById("biz-name-display").textContent=S.bizName||"המספרה";
+        lSel="owner"; pin=""; renderLogin(); showPg("pg-login");
+      }
+    }).catch(function(){});
+  }
 })();
