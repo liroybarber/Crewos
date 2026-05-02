@@ -545,12 +545,15 @@ function updOETot(){
   (S.svcs||[]).forEach(function(s){cnt+=oeCtr[s.id]||0;amt+=(oeCtr[s.id]||0)*s.price;});
   document.getElementById("oe-tcnt").textContent=cnt;
   document.getElementById("oe-tamt").textContent="\u20AA"+amt;
-  var b=document.getElementById("oe-save");b.disabled=cnt===0;b.style.opacity=cnt===0?".4":"1";
+  /* כפתור שמור תמיד פעיל כשהחלון פתוח */
+  var b=document.getElementById("oe-save");b.disabled=false;b.style.opacity="1";
 }
 function saveOwnerEntry(){
   var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:oeCtr[s.id]||0,price:s.price};});
-  var ts=svcs.reduce(function(s,x){return s+x.cnt;},0),tot=svcs.reduce(function(s,x){return s+x.cnt*x.price;},0);
-  if(!S.ownerEntries)S.ownerEntries={};
+  var ts=svcs.reduce(function(s,x){return s+x.cnt;},0);
+  var tot=svcs.reduce(function(s,x){return s+x.cnt*x.price;},0);
+  if(!S.ownerEntries) S.ownerEntries={};
+  /* שומרים גם אם הכל 0 — מעדכן דיווח קיים */
   S.ownerEntries[td()]={date:td(),svcs:svcs,totalSvcs:ts,total:tot};
   sv(); closeM("m-owner-entry"); rOwner();
 }
@@ -625,13 +628,16 @@ function updTot(){
   document.getElementById("e-ttip").textContent=eTip;
   document.getElementById("e-tamt").textContent="\u20AA"+amt;
   var hr=document.getElementById("e-hpay");if(hr)hr.textContent="\u20AA"+hp;
-  var ok=cnt>0||eCan>0||eTip>0||eHrs>0;
-  var b=document.getElementById("e-save");b.disabled=!ok;b.style.opacity=ok?"1":".4";
+  /* כפתור שמור תמיד פעיל כשהחלון פתוח */
+  var b=document.getElementById("e-save");b.disabled=false;b.style.opacity="1";
 }
 function saveEntry(){
   var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:eCtr[s.id]||0,price:s.price};});
-  var ts=svcs.reduce(function(s,x){return s+x.cnt;},0),tot=svcs.reduce(function(s,x){return s+x.cnt*x.price;},0);
-  if(!S.entries[eEid])S.entries[eEid]={};
+  var ts=svcs.reduce(function(s,x){return s+x.cnt;},0);
+  var tot=svcs.reduce(function(s,x){return s+x.cnt*x.price;},0);
+  if(!S.entries) S.entries={};
+  if(!S.entries[eEid]) S.entries[eEid]={};
+  /* שומרים גם אם הכל 0 — מעדכן דיווח קיים */
   S.entries[eEid][td()]={date:td(),svcs:svcs,totalSvcs:ts,total:tot,cancels:eCan,tip:eTip,hrs:eHrs};
   sv(); closeM("m-entry"); if(ses.role==="owner")rOwner();else rEmp();
 }
