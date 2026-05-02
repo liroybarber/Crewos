@@ -76,21 +76,22 @@ function registerBiz() {
   var bizName     = document.getElementById("reg-biz-name").value.trim();
   var ownerName   = document.getElementById("reg-owner-name").value.trim();
   var phone       = document.getElementById("reg-phone").value.trim();
-  var sitePass    = document.getElementById("reg-site-pass").value.trim();
-  var ownerPass   = document.getElementById("reg-owner-pass").value.trim();
-  var ownerPass2  = document.getElementById("reg-owner-pass2").value.trim();
+  var sitePass    = document.getElementById("reg-site-pass").value.replace(/\s/g,"");
+  var ownerPass   = document.getElementById("reg-owner-pass").value.replace(/\s/g,"");
+  var ownerPass2  = document.getElementById("reg-owner-pass2").value.replace(/\s/g,"");
   var err         = document.getElementById("reg-err");
 
   err.textContent = "";
-  if(!bizName)                               { err.textContent="נא להזין שם מספרה"; return; }
-  if(!ownerName)                             { err.textContent="נא להזין שם בעל העסק"; return; }
-  if(!phone)                                 { err.textContent="נא להזין מספר טלפון"; return; }
-  if(sitePass.length!==4||isNaN(sitePass))   { err.textContent="סיסמת הכניסה לעסק חייבת להיות 4 ספרות"; return; }
-  if(ownerPass.length!==4||isNaN(ownerPass)) { err.textContent="סיסמת בעל העסק חייבת להיות 4 ספרות"; return; }
-  if(ownerPass!==ownerPass2)                 { err.textContent="אישור סיסמת בעל העסק לא תואם"; return; }
+  if(!bizName)                                      { err.textContent="נא להזין שם מספרה"; return; }
+  if(!ownerName)                                    { err.textContent="נא להזין שם בעל העסק"; return; }
+  if(!phone)                                        { err.textContent="נא להזין מספר טלפון"; return; }
+  if(!/^\d{4}$/.test(sitePass))                    { err.textContent="סיסמת הכניסה לעסק חייבת להיות 4 ספרות"; return; }
+  if(!/^\d{4}$/.test(ownerPass))                   { err.textContent="סיסמת בעל העסק חייבת להיות 4 ספרות"; return; }
+  if(ownerPass!==ownerPass2)                        { err.textContent="אישור סיסמת בעל העסק לא תואם"; return; }
 
   err.textContent = "רושם...";
   var phoneKey = phone.replace(/\D/g,"");
+  console.log("[REGISTER] phoneKey:", phoneKey, "sitePass.length:", sitePass.length, "ownerPass.length:", ownerPass.length);
 
   db.ref("phones/"+phoneKey).once("value").then(function(snap){
     if(snap.val()){ err.textContent="מספר טלפון כבר רשום במערכת"; return; }
@@ -124,12 +125,12 @@ function registerBiz() {
 /* ── SITE LOGIN (phone + sitePassword) ── */
 function siteLogin() {
   var phone    = document.getElementById("login-phone").value.trim().replace(/\D/g,"");
-  var sitePwd  = document.getElementById("login-site-pass").value.trim();
+  var sitePwd  = document.getElementById("login-site-pass").value.replace(/\s/g,"");
   var err      = document.getElementById("login-err");
 
   err.textContent = "";
-  if(!phone)              { err.textContent="נא להזין מספר טלפון"; return; }
-  if(sitePwd.length!==4)  { err.textContent="נא להזין סיסמה של 4 ספרות"; return; }
+  if(!phone)                   { err.textContent="נא להזין מספר טלפון"; return; }
+  if(!/^\d{4}$/.test(sitePwd)) { err.textContent="נא להזין סיסמה של 4 ספרות"; return; }
 
   err.textContent="בודק...";
   db.ref("phones/"+phone).once("value").then(function(snap){
@@ -140,8 +141,16 @@ function siteLogin() {
       var data = snap2.val();
       if(!data){ err.textContent="שגיאה, נסה שוב"; return; }
 
+      /* debug - לא מדפיסים סיסמאות */
+      console.log("[LOGIN] business found, phone:", phone,
+        "entered length:", sitePwd.length,
+        "stored sitePassword length:", (data.sitePassword||"").length,
+        "fields match:", data.sitePassword === sitePwd);
+
       /* בודקים רק sitePassword */
-      if(data.sitePassword !== sitePwd){ err.textContent="סיסמת כניסה שגויה"; return; }
+      if((data.sitePassword||"").replace(/\s/g,"") !== sitePwd){
+        err.textContent="סיסמת כניסה שגויה"; return;
+      }
 
       err.textContent="";
       bizCode = code;
