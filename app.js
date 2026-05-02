@@ -1,5 +1,5 @@
 /* ── CONFIG ── */
-var COLS = ["var(--tx2)","var(--tx2)","var(--tx2)","var(--tx2)","var(--tx2)","var(--tx2)"];
+var COLS = ["#E8782A","#10B981","#8B5CF6","#EF4444","#F59E0B","#3B82F6"];
 var MDL = [
   {id:"percent",   lbl:"אחוז מכל שירות"},
   {id:"hourly",    lbl:"שכיר לפי שעה"},
@@ -186,7 +186,7 @@ function renderLogin(){
   var h="";
   (S.emps||[]).forEach(function(e){
     var sel=lSel===e.id;
-    h+="<div class=eo id='lo-"+e.id+"' onclick='selUser("+e.id+")' style='border-color:"+(sel?e.color:"rgba(255,255,255,.08)")+";background:"+(sel?"var(--btn)":"var(--btn)")+"'>";
+    h+="<div class=eo id='lo-"+e.id+"' onclick='selUser("+e.id+")' style='border-color:"+(sel?e.color:"rgba(255,255,255,.08)")+";background:"+(sel?e.color+"18":"var(--btn)")+"'>";
     h+="<div class=av style='width:40px;height:40px;background:"+e.color+"22;border:2px solid "+e.color+";font-size:12px;color:"+e.color+"'>"+e.av+"</div>";
     h+="<div><div style='font-weight:700;font-size:14px'>"+e.name+"</div><div style='color:var(--dm);font-size:11px'>"+e.role+"</div></div></div>";
   });
@@ -194,7 +194,7 @@ function renderLogin(){
   var oel=document.getElementById("lo-owner");
   if(oel){
     oel.onclick=function(){selUser("owner");};
-    oel.style.borderColor=lSel==="owner"?"var(--tx)":"rgba(255,255,255,.08)";
+    oel.style.borderColor=lSel==="owner"?"var(--or)":"rgba(255,255,255,.08)";
     oel.style.background=lSel==="owner"?"rgba(232,120,42,.1)":"var(--btn)";
   }
   updHint(); rdots();
@@ -203,11 +203,11 @@ function renderLogin(){
 function selUser(id){
   lSel=id; pin="";
   var oel=document.getElementById("lo-owner");
-  if(oel){oel.style.borderColor=id==="owner"?"var(--tx)":"rgba(255,255,255,.08)";oel.style.background=id==="owner"?"rgba(232,120,42,.1)":"var(--btn)";}
+  if(oel){oel.style.borderColor=id==="owner"?"var(--or)":"rgba(255,255,255,.08)";oel.style.background=id==="owner"?"rgba(232,120,42,.1)":"var(--btn)";}
   (S.emps||[]).forEach(function(e){
     var el=document.getElementById("lo-"+e.id); if(!el)return;
     el.style.borderColor=id===e.id?e.color:"rgba(255,255,255,.08)";
-    el.style.background=id===e.id?"var(--btn)":"var(--btn)";
+    el.style.background=id===e.id?e.color+"18":"var(--btn)";
   });
   var pe=document.getElementById("pin-err"); if(pe)pe.textContent="";
   updHint(); rdots();
@@ -345,7 +345,7 @@ function rOwner(){
   mt=r2(mt+ownerMonth); om=r2(om+ownerMonth);
   var otd=document.getElementById("ow-today"); if(otd)otd.textContent=formatMoney(tt);
   var os=document.getElementById("ow-stats");
-  if(os)os.innerHTML=sb("סה\"כ חודש",formatMoney(mt),"","var(--tx2)")+sb("רווח שלך",formatMoney(om),"","var(--tx2)")+sb("ביטולים",tc,"היום","var(--tx2)");
+  if(os)os.innerHTML=sb("סה\"כ חודש",formatMoney(mt),"","#E8782A")+sb("רווח שלך",formatMoney(om),"","#10B981")+sb("ביטולים",tc,"היום","#EF4444");
   rOwTab(owT);
 }
 
@@ -373,9 +373,9 @@ function rToday(){
   var closed=isDayClosed(td());
   var h="";
   if(closed){
-    h+="<div class='closed-banner'><div><div class='msg'>\uD83D\uDD12 יום נסגר</div><div class='sub'>לא ניתן לערוך נתונים</div></div><button onclick='openUnlockModal()' style='height:34px;padding:0 12px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--tx2);border-radius:10px;font-size:12px;font-weight:700'>פתח לעריכה</button></div>";
+    h+="<div class='closed-banner'><div><div class='msg'>\uD83D\uDD12 יום נסגר</div><div class='sub'>לא ניתן לערוך נתונים</div></div><button onclick='openUnlockModal()' style='height:34px;padding:0 12px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--re);border-radius:10px;font-size:12px;font-weight:700'>פתח לעריכה</button></div>";
   }else{
-    h+="<button onclick='closeDay()' style='width:100%;height:46px;border-radius:12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--tx2);font-size:14px;font-weight:700;margin-bottom:12px'>\uD83D\uDD12 סגור יום</button>";
+    h+="<button onclick='closeDay()' style='width:100%;height:46px;border-radius:12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--gr);font-size:14px;font-weight:700;margin-bottom:12px'>\uD83D\uDD12 סגור יום</button>";
   }
   h+="<div class=sl>סיכום יום זה</div>";
   var ownerTe=(S.ownerEntries||{})[td()];
@@ -383,11 +383,11 @@ function rToday(){
   var ownerSm=ownerTe?(ownerTe.svcs||[]).filter(function(s){return n(s.cnt)>0;}).map(function(s){return s.lbl+": "+s.cnt;}).join(" | "):"אין נתונים";
   h+="<div class=card><div style='display:flex;align-items:center;justify-content:space-between'>";
   h+="<div style='display:flex;align-items:center;gap:12px'>";
-  h+="<div class=av style='width:40px;height:40px;background:rgba(232,120,42,.15);border:2px solid var(--or);font-size:11px;font-weight:900;color:var(--tx)'>BOS</div>";
+  h+="<div class=av style='width:40px;height:40px;background:rgba(232,120,42,.15);border:2px solid var(--or);font-size:11px;font-weight:900;color:var(--or)'>BOS</div>";
   h+="<div><div style='font-weight:700;font-size:14px'>"+S.ownerName+"</div><div style='color:var(--dm);font-size:11px'>"+ownerSm+"</div></div></div>";
-  h+="<div style='text-align:left'><div style='color:var(--tx);font-weight:700;font-size:18px'>"+formatMoney(ownerGross)+"</div><div style='color:var(--tx3);font-size:11px'>הכנסה שלך</div></div></div>";
+  h+="<div style='text-align:left'><div style='color:var(--or);font-weight:900;font-size:18px'>"+formatMoney(ownerGross)+"</div><div style='color:var(--gr);font-size:11px'>הכנסה שלך</div></div></div>";
   if(!closed){
-    h+="<button onclick='openOwnerEntry()' style='width:100%;height:38px;border-radius:10px;margin-top:12px;background:"+(ownerTe?"var(--btn)":"rgba(232,120,42,.1)")+";border:1px solid "+(ownerTe?"var(--br)":"var(--tx)")+";color:"+(ownerTe?"var(--mu)":"var(--tx)")+";font-size:13px;font-weight:700'>"+(ownerTe?"עדכן יום שלי":"הזן יום שלי")+"</button>";
+    h+="<button onclick='openOwnerEntry()' style='width:100%;height:38px;border-radius:10px;margin-top:12px;background:"+(ownerTe?"var(--btn)":"rgba(232,120,42,.1)")+";border:1px solid "+(ownerTe?"var(--br)":"var(--or)")+";color:"+(ownerTe?"var(--mu)":"var(--or)")+";font-size:13px;font-weight:700'>"+(ownerTe?"עדכן יום שלי":"הזן יום שלי")+"</button>";
   }
   h+="</div>";
   (S.emps||[]).forEach(function(e){
@@ -398,9 +398,9 @@ function rToday(){
     h+="<div style='display:flex;align-items:center;gap:12px'>";
     h+="<div class=av style='width:40px;height:40px;background:"+e.color+"22;border:2px solid "+e.color+";font-size:12px;color:"+e.color+"'>"+e.av+"</div>";
     h+="<div><div style='font-weight:700;font-size:14px'>"+e.name+"</div><div style='color:var(--dm);font-size:11px'>"+sm+(c2?" \u00b7 ביטולים:"+c2:"")+(tip?" \u00b7 טיפ:"+tip:"")+"</div></div></div>";
-    h+="<div style='text-align:left'><div style='color:var(--tx);font-weight:700;font-size:18px'>"+formatMoney(r.gross)+"</div><div style='color:var(--tx3);font-size:11px'>שלך: "+formatMoney(r.os)+"</div></div></div>";
+    h+="<div style='text-align:left'><div style='color:var(--or);font-weight:900;font-size:18px'>"+formatMoney(r.gross)+"</div><div style='color:var(--gr);font-size:11px'>שלך: "+formatMoney(r.os)+"</div></div></div>";
     if(!closed&&e.pm!=="chair"){
-      h+="<button onclick='openEntry("+e.id+")' style='width:100%;height:36px;border-radius:10px;margin-top:10px;background:var(--btn);border:1px solid var(--br2);color:"+(te?"var(--tx3)":"var(--tx)")+";font-size:13px;font-weight:700'>"+(te?"עדכן":"הזן יום")+"</button>";
+      h+="<button onclick='openEntry("+e.id+")' style='width:100%;height:36px;border-radius:10px;margin-top:10px;background:"+(te?"var(--btn)":"e.color+'18'")+";border:1px solid "+(te?"var(--br)":e.color)+";color:"+(te?"var(--mu)":e.color)+";font-size:13px;font-weight:700'>"+(te?"עדכן":"הזן יום")+"</button>";
     }
     h+="</div>";
   });
@@ -423,13 +423,13 @@ function rEmps(){
     h+="<div><div style='font-weight:800;font-size:15px'>"+e.name+"</div><div style='color:var(--dm);font-size:11px'>"+e.role+"</div></div></div>";
     h+="<span class=bdg style='background:"+e.color+"18;color:"+e.color+";border:1px solid "+e.color+"33'>"+ml+"</span></div>";
     h+="<div class=stats style='margin-top:0;margin-bottom:12px'>";
-    if(isC){h+=sb("שכירת כיסא",formatMoney(e.cr),"חודשי","var(--tx2)")+sb("רווח שלך",formatMoney(e.cr),"חודשי","var(--tx2)");}
-    else{h+=sb("הכנסות היום",formatMoney(td2.gross),"",e.color)+sb("שכר עובד",formatMoney(td2.es),"",e.color)+sb("סה\"כ חודש",formatMoney(mo.gross),"שלך: "+formatMoney(oMon),"var(--tx2)")+sb("ביטולים",tc,"","var(--tx2)");}
+    if(isC){h+=sb("שכירת כיסא",formatMoney(e.cr),"חודשי","#E8782A")+sb("רווח שלך",formatMoney(e.cr),"חודשי","#10B981");}
+    else{h+=sb("הכנסות היום",formatMoney(td2.gross),"",e.color)+sb("שכר עובד",formatMoney(td2.es),"",e.color)+sb("סה\"כ חודש",formatMoney(mo.gross),"שלך: "+formatMoney(oMon),"#10B981")+sb("ביטולים",tc,"","#EF4444");}
     h+="</div><div style='display:flex;gap:8px'>";
     h+="<button onclick='openEditModal("+e.id+")' class='btn-secondary' style='flex:1;height:40px;font-size:12px'>הגדרות</button>";
     if(!isC){
       var dayClosed=isDayClosed(td());
-      h+="<button onclick='openEntry("+e.id+")' style='flex:2;height:40px;border-radius:12px;background:"+(hasT?"var(--btn)":"var(--btn)")+";border:1px solid var(--br2)"+";color:"+(hasT?"var(--tx3)":"var(--tx)")+";font-size:13px;font-weight:700;"+(dayClosed?"opacity:.5;cursor:not-allowed":"")+"\'"+(dayClosed?" disabled":"")+">"+( hasT?"עדכן יום":"הזן יום")+"</button>";
+      h+="<button onclick='openEntry("+e.id+")' style='flex:2;height:40px;border-radius:12px;background:"+(hasT?"var(--btn)":e.color+"18")+";border:1px solid "+(hasT?"var(--br)":e.color)+";color:"+(hasT?"var(--mu)":e.color)+";font-size:13px;font-weight:700;"+(dayClosed?"opacity:.5;cursor:not-allowed":"")+"\'"+(dayClosed?" disabled":"")+">"+( hasT?"עדכן יום":"הזן יום")+"</button>";
     }else{
       h+="<div style='flex:2;height:40px;border-radius:12px;background:var(--btn);border:1px solid var(--br);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dm)'>כיסא בלבד</div>";
     }
@@ -446,7 +446,7 @@ function rReport(){
   var ownerMonth=r2(ownerAll.reduce(function(s,e){return s+n(e.total);},0));
   mt=r2(mt+ownerMonth); om=r2(om+ownerMonth);
   var goal=n(S.goal),pct=goal>0?Math.min(100,Math.round(mt/goal*100)):0;
-  var gH=goal>0?"<div class=card><div style='display:flex;justify-content:space-between;margin-bottom:6px'><div style='font-size:14px;font-weight:700'>יעד חודשי</div><div style='color:var(--tx);font-weight:800'>"+pct+"%</div></div><div class=pw><div class=pbr style='width:"+pct+"%'></div></div><div style='font-size:11px;color:var(--dm);margin-top:5px'>נשאר "+formatMoney(Math.max(0,goal-mt))+"</div></div>":"";
+  var gH=goal>0?"<div class=card><div style='display:flex;justify-content:space-between;margin-bottom:6px'><div style='font-size:14px;font-weight:700'>יעד חודשי</div><div style='color:var(--or);font-weight:800'>"+pct+"%</div></div><div class=pw><div class=pbr style='width:"+pct+"%'></div></div><div style='font-size:11px;color:var(--dm);margin-top:5px'>נשאר "+formatMoney(Math.max(0,goal-mt))+"</div></div>":"";
   var ym=new Date().toISOString().slice(0,7),days={};
   (S.emps||[]).forEach(function(e){Object.entries((S.entries&&S.entries[e.id])||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+n(p[1].total);});});
   Object.entries(S.ownerEntries||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+n(p[1].total);});
@@ -455,12 +455,12 @@ function rReport(){
   if(dks.length){cH="<div class=cw3><div style='font-size:11px;color:var(--dm);margin-bottom:8px;font-weight:700'>הכנסות יומיות</div><div class=cb2>";dks.forEach(function(k){cH+="<div class=bw><div class=bf style='height:"+Math.round(days[k]/mx*100)+"%'></div><div class=bl2>"+parseInt(k.slice(8))+"</div></div>";});cH+="</div></div>";}
   var mx2=Math.max.apply(null,(S.emps||[]).map(function(e){return n(calc(Object.values((S.entries&&S.entries[e.id])||{}),e).gross);}).concat([n(ownerMonth),1]));
   var cpH="<div class=card><div style='font-size:13px;font-weight:700;margin-bottom:14px'>השוואה</div>";
-  cpH+="<div class=cbr><div class=cnr><span>"+S.ownerName+"</span><span style='color:var(--tx)'>"+formatMoney(ownerMonth)+"</span></div><div class=cbg><div class=cf style='width:"+Math.round(ownerMonth/mx2*100)+"%;background:var(--or)'></div></div></div>";
+  cpH+="<div class=cbr><div class=cnr><span>"+S.ownerName+"</span><span style='color:var(--or)'>"+formatMoney(ownerMonth)+"</span></div><div class=cbg><div class=cf style='width:"+Math.round(ownerMonth/mx2*100)+"%;background:var(--or)'></div></div></div>";
   (S.emps||[]).forEach(function(e){var r=calc(Object.values((S.entries&&S.entries[e.id])||{}),e),p=Math.round(n(r.gross)/mx2*100);cpH+="<div class=cbr><div class=cnr><span>"+e.name+"</span><span style='color:"+e.color+"'>"+formatMoney(r.gross)+"</span></div><div class=cbg><div class=cf style='width:"+p+"%;background:"+e.color+"'></div></div></div>";});
   cpH+="</div>";
   var mn=new Date().toLocaleDateString("he-IL",{month:"long",year:"numeric"});
   var tr=document.getElementById("t-report");
-  if(tr)tr.innerHTML="<div class=card><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'><div><div style='font-size:14px;font-weight:700'>סיכום חודש</div><div style='font-size:11px;color:var(--dm)'>"+mn+"</div></div><button onclick='openM(\"m-goal\")' style='background:var(--btn);border:1px solid var(--br);color:var(--mu);padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700'>יעד</button></div><div class=stats>"+sb("סה\"כ",formatMoney(mt),"","var(--tx2)")+sb("רווח שלך",formatMoney(om),"","var(--tx2)")+"</div></div>"+gH+cH+cpH;
+  if(tr)tr.innerHTML="<div class=card><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'><div><div style='font-size:14px;font-weight:700'>סיכום חודש</div><div style='font-size:11px;color:var(--dm)'>"+mn+"</div></div><button onclick='openM(\"m-goal\")' style='background:var(--btn);border:1px solid var(--br);color:var(--mu);padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700'>יעד</button></div><div class=stats>"+sb("סה\"כ",formatMoney(mt),"","#E8782A")+sb("רווח שלך",formatMoney(om),"","#10B981")+"</div></div>"+gH+cH+cpH;
 }
 
 /* ── HISTORY ── */
@@ -485,11 +485,11 @@ function rHistory(){
   h+="</div></div>";
   var days={};
   (S.emps||[]).forEach(function(e){Object.entries((S.entries&&S.entries[e.id])||{}).forEach(function(p){if(p[0].startsWith(histMonth)){if(!days[p[0]])days[p[0]]={};days[p[0]][e.id]={entry:p[1],emp:e};}});});
-  Object.entries(S.ownerEntries||{}).forEach(function(p){if(p[0].startsWith(histMonth)){if(!days[p[0]])days[p[0]]={};days[p[0]]["owner"]={entry:p[1],emp:{id:"owner",name:S.ownerName,color:"var(--tx2)",pm:"percent",pct:100,sp:{}}};}});
+  Object.entries(S.ownerEntries||{}).forEach(function(p){if(p[0].startsWith(histMonth)){if(!days[p[0]])days[p[0]]={};days[p[0]]["owner"]={entry:p[1],emp:{id:"owner",name:S.ownerName,color:"#E8782A",pm:"percent",pct:100,sp:{}}};}});
   var sortedDays=Object.keys(days).sort(function(a,b){return histSort==="desc"?b.localeCompare(a):a.localeCompare(b);});
   var mTotal=0,mSalary=0,mOwner=0,mCancel=0;
   sortedDays.forEach(function(d){Object.values(days[d]).forEach(function(row){if(row.emp.id==="owner"){mTotal+=n(row.entry.total);mOwner+=n(row.entry.total);}else{var r=calc([row.entry],row.emp);mTotal+=n(r.gross);mSalary+=n(r.es);mOwner+=n(r.os);mCancel+=n(row.entry.cancels);if(row.emp.pm==="chair"||row.emp.pm==="chair_pct")mOwner+=n(row.emp.cr);}});});
-  h+="<div class=card style='border-color:rgba(232,120,42,.2)'><div style='font-size:13px;font-weight:700;margin-bottom:12px;color:var(--tx)'>סיכום חודשי</div><div class=stats>"+sb("סה\"כ הכנסות",formatMoney(mTotal),"","var(--tx2)")+sb("שכר עובדים",formatMoney(mSalary),"","var(--tx2)")+sb("רווח שלך",formatMoney(mOwner),"","var(--tx2)")+sb("ביטולים",mCancel,"","var(--tx2)")+"</div></div>";
+  h+="<div class=card style='border-color:rgba(232,120,42,.2)'><div style='font-size:13px;font-weight:700;margin-bottom:12px;color:var(--or)'>סיכום חודשי</div><div class=stats>"+sb("סה\"כ הכנסות",formatMoney(mTotal),"","#E8782A")+sb("שכר עובדים",formatMoney(mSalary),"","#8B5CF6")+sb("רווח שלך",formatMoney(mOwner),"","#10B981")+sb("ביטולים",mCancel,"","#EF4444")+"</div></div>";
   if(!sortedDays.length){h+="<div style='text-align:center;padding:30px 0;color:var(--dm)'>אין נתונים לחודש זה</div>";if(th)th.innerHTML=h;return;}
   sortedDays.forEach(function(d){
     var dateObj=new Date(d),dateLbl=dateObj.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"});
@@ -500,10 +500,10 @@ function rHistory(){
     h+="<div class=card>";
     h+="<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px'>";
     h+="<div style='font-size:13px;font-weight:800'>"+(closed?"\uD83D\uDD12 ":"")+dateLbl+"</div>";
-    if(closed&&ses&&ses.role==="owner"){h+="<button onclick='openUnlockModal(\""+d+"\")' style='height:28px;padding:0 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--tx2);border-radius:8px;font-size:11px;font-weight:700'>פתח</button>";}
+    if(closed&&ses&&ses.role==="owner"){h+="<button onclick='openUnlockModal(\""+d+"\")' style='height:28px;padding:0 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--re);border-radius:8px;font-size:11px;font-weight:700'>פתח</button>";}
     h+="</div>";
     rows.forEach(function(row){
-      var empName=row.emp.name,empColor=row.emp.color||"var(--tx2)";
+      var empName=row.emp.name,empColor=row.emp.color||"#E8782A";
       var sm=(row.entry.svcs||[]).filter(function(s){return n(s.cnt)>0;}).map(function(s){return s.lbl+" x"+s.cnt;}).join(" | ")||"---";
       var gross=0,sal=0,ownerShare=0;
       if(row.emp.id==="owner"){gross=n(row.entry.total);ownerShare=gross;}
@@ -514,12 +514,12 @@ function rHistory(){
       h+="<div class=av style='width:34px;height:34px;background:"+empColor+"22;border:2px solid "+empColor+";font-size:10px;color:"+empColor+"'>"+ini(empName)+"</div>";
       h+="<div><div style='font-weight:700;font-size:13px'>"+empName+"</div><div style='color:var(--dm);font-size:11px'>"+sm+"</div></div></div>";
       h+="<div style='text-align:left'>";
-      if(row.emp.id!=="owner"){h+="<div style='font-size:11px;color:var(--tx3)'>שכר: "+formatMoney(sal)+"</div><div style='font-size:11px;color:var(--tx3)'>שלך: "+formatMoney(ownerShare)+"</div>";}
-      h+="<div style='font-size:14px;font-weight:700;color:var(--tx)'>"+formatMoney(gross)+"</div>";
-      if(n(row.entry.cancels)>0)h+="<div style='font-size:10px;color:var(--tx2)'>ביטולים: "+row.entry.cancels+"</div>";
+      if(row.emp.id!=="owner"){h+="<div style='font-size:11px;color:#8B5CF6'>שכר: "+formatMoney(sal)+"</div><div style='font-size:11px;color:#10B981'>שלך: "+formatMoney(ownerShare)+"</div>";}
+      h+="<div style='font-size:14px;font-weight:900;color:var(--or)'>"+formatMoney(gross)+"</div>";
+      if(n(row.entry.cancels)>0)h+="<div style='font-size:10px;color:var(--re)'>ביטולים: "+row.entry.cancels+"</div>";
       h+="</div></div>";
     });
-    h+="<div style='display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--br)'><span style='font-size:12px;color:var(--dm)'>סה\"כ יום</span><span style='font-size:14px;font-weight:700;color:var(--tx)'>"+formatMoney(dayTotal)+"</span></div></div>";
+    h+="<div style='display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--br)'><span style='font-size:12px;color:var(--dm)'>סה\"כ יום</span><span style='font-size:14px;font-weight:900;color:var(--or)'>"+formatMoney(dayTotal)+"</span></div></div>";
   });
   if(th)th.innerHTML=h;
 }
@@ -527,8 +527,8 @@ function rHistory(){
 function rSvcs(){
   var h="<div class=sl>שירותים ומחירים</div><div class=card>";
   (S.svcs||[]).forEach(function(s){
-    h+="<div class=smr><div><div style='font-weight:700'>"+s.lbl+"</div><div style='color:var(--tx);font-size:12px'>"+formatMoney(s.price)+"</div></div>";
-    h+="<div style='display:flex;gap:8px'><button class=ib style='background:rgba(139,92,246,.1);color:var(--tx2);border:1px solid rgba(139,92,246,.2)' onclick='openEditSvc(\""+s.id+"\")'>עריכה</button><button class=ib style='background:rgba(239,68,68,.1);color:var(--tx2);border:1px solid rgba(239,68,68,.2)' onclick='delSvc(\""+s.id+"\")'>מחק</button></div></div>";
+    h+="<div class=smr><div><div style='font-weight:700'>"+s.lbl+"</div><div style='color:var(--or);font-size:12px'>"+formatMoney(s.price)+"</div></div>";
+    h+="<div style='display:flex;gap:8px'><button class=ib style='background:rgba(139,92,246,.1);color:#8B5CF6;border:1px solid rgba(139,92,246,.2)' onclick='openEditSvc(\""+s.id+"\")'>עריכה</button><button class=ib style='background:rgba(239,68,68,.1);color:var(--re);border:1px solid rgba(239,68,68,.2)' onclick='delSvc(\""+s.id+"\")'>מחק</button></div></div>";
   });
   h+="</div><button onclick='openAddSvc()' class='bg2' style='width:100%;height:48px;font-size:14px'>+ הוסף שירות</button>";
   h+="<div style='margin-top:22px'></div><div class=sl>הגדרות בעל עסק</div><div class=card>";
@@ -548,20 +548,20 @@ function changeSitePass(){
   var np=(document.getElementById("new-site-pass").value||"").trim();
   var cp=(document.getElementById("new-site-pass2").value||"").trim();
   var msg=document.getElementById("site-pass-msg");
-  if(!/^\d{4}$/.test(np)){msg.style.color="var(--tx2)";msg.textContent="4 ספרות בלבד";return;}
-  if(np!==cp){msg.style.color="var(--tx2)";msg.textContent="הסיסמאות לא תואמות";return;}
+  if(!/^\d{4}$/.test(np)){msg.style.color="var(--re)";msg.textContent="4 ספרות בלבד";return;}
+  if(np!==cp){msg.style.color="var(--re)";msg.textContent="הסיסמאות לא תואמות";return;}
   S.sitePassword=np; sv();
-  msg.style.color="var(--tx2)"; msg.textContent="עודכן!";
+  msg.style.color="var(--gr)"; msg.textContent="עודכן!";
   setTimeout(function(){msg.textContent="";},3000);
 }
 function changeOwnerPass(){
   var np=(document.getElementById("new-owner-pass").value||"").trim();
   var cp=(document.getElementById("new-owner-pass2").value||"").trim();
   var msg=document.getElementById("owner-pass-msg");
-  if(!/^\d{4}$/.test(np)){msg.style.color="var(--tx2)";msg.textContent="4 ספרות בלבד";return;}
-  if(np!==cp){msg.style.color="var(--tx2)";msg.textContent="הסיסמאות לא תואמות";return;}
+  if(!/^\d{4}$/.test(np)){msg.style.color="var(--re)";msg.textContent="4 ספרות בלבד";return;}
+  if(np!==cp){msg.style.color="var(--re)";msg.textContent="הסיסמאות לא תואמות";return;}
   S.ownerPassword=np; sv();
-  msg.style.color="var(--tx2)"; msg.textContent="עודכן!";
+  msg.style.color="var(--gr)"; msg.textContent="עודכן!";
   setTimeout(function(){msg.textContent="";},3000);
 }
 
@@ -604,14 +604,14 @@ function saveOwnerEntry(){
 function rEmp(){
   var e=(S.emps||[]).find(function(x){return x.id===ses.eid;}); if(!e)return;
   var av=document.getElementById("emp-av");
-  if(av){av.textContent=e.av;av.style.background="var(--btn)";av.style.border="1px solid var(--br2)";av.style.color=e.color;}
+  if(av){av.textContent=e.av;av.style.background=e.color+"22";av.style.border="2px solid "+e.color;av.style.color=e.color;}
   var en=document.getElementById("emp-name"); if(en)en.textContent=e.name;
   var md=e.pm==="percent"?"אחוז לפי שירות":e.pm==="hourly"?n(e.hr)+"\u20AA לשעה":e.pm==="chair_pct"?"כיסא + אחוזים":"שכירת כיסא";
   var es=document.getElementById("emp-sub"); if(es)es.textContent=e.role+" \u2013 "+md;
   var ee=(S.entries&&S.entries[e.id])||{},te=ee[td()],all=Object.values(ee),t2=calc(te?[te]:[],e),mo=calc(all,e);
   var tc=te?n(te.cancels):0,tca=all.reduce(function(s,x){return s+n(x.cancels);},0),avg=all.length?r2(mo.es/all.length):0;
   var estats=document.getElementById("emp-stats");
-  if(estats)estats.innerHTML=sb("השתכרת היום",formatMoney(t2.es),"","var(--tx2)")+sb("סה\"כ החודש",formatMoney(mo.es),all.length+" ימים","var(--tx2)")+sb("ממוצע / יום",formatMoney(avg),"","var(--tx2)")+sb("ביטולים",tc,"סה\"כ: "+tca,"var(--tx2)");
+  if(estats)estats.innerHTML=sb("השתכרת היום",formatMoney(t2.es),"","#E8782A")+sb("סה\"כ החודש",formatMoney(mo.es),all.length+" ימים","#10B981")+sb("ממוצע / יום",formatMoney(avg),"","#E8782A")+sb("ביטולים",tc,"סה\"כ: "+tca,"#EF4444");
   var act=document.getElementById("emp-act");
   var dayClosed=isDayClosed(td());
   if(act){
@@ -625,7 +625,7 @@ function rEmp(){
     var sm=(en.svcs||[]).filter(function(s){return n(s.cnt)>0;}).map(function(s){return s.lbl+" x"+s.cnt;}).join(" | ");
     var c2=n(en.cancels),t=n(en.tip),h=n(en.hrs);
     var isClosed=isDayClosed(en.date);
-    hist+="<div class=card><div style='display:flex;justify-content:space-between;align-items:center'><div><div style='font-weight:700;font-size:13px'>"+(isClosed?"\uD83D\uDD12 ":"")+ds+"</div><div style='color:var(--dm);font-size:11px;margin-top:2px'>"+sm+(h?" "+h+"h":"")+(c2?" ביטולים:"+c2:"")+(t?" טיפ:"+t:"")+"</div></div><div style='text-align:left'><div style='color:var(--tx);font-weight:900;font-size:16px'>"+formatMoney(er.es)+"</div><div style='color:var(--dm);font-size:10px'>"+en.totalSvcs+" שירותים</div></div></div></div>";
+    hist+="<div class=card><div style='display:flex;justify-content:space-between;align-items:center'><div><div style='font-weight:700;font-size:13px'>"+(isClosed?"\uD83D\uDD12 ":"")+ds+"</div><div style='color:var(--dm);font-size:11px;margin-top:2px'>"+sm+(h?" "+h+"h":"")+(c2?" ביטולים:"+c2:"")+(t?" טיפ:"+t:"")+"</div></div><div style='text-align:left'><div style='color:var(--or);font-weight:900;font-size:16px'>"+formatMoney(er.es)+"</div><div style='color:var(--dm);font-size:10px'>"+en.totalSvcs+" שירותים</div></div></div></div>";
   });
   var eh=document.getElementById("emp-hist"); if(eh)eh.innerHTML=hist;
 }
@@ -648,7 +648,7 @@ function openEntry(eid){
   var etip=document.getElementById("e-tip"); if(etip)etip.textContent=eTip;
   var hw=document.getElementById("e-hours");
   if(e.pm==="hourly"&&hw){
-    hw.innerHTML="<div class=xb2 style='background:var(--btn);border:1px solid var(--br);margin-bottom:10px'><div><div style='font-size:13px;font-weight:700;color:var(--tx2)'>שעות עבודה</div><div style='font-size:11px;color:var(--dm);margin-top:1px'>"+formatMoney(n(e.hr))+" לשעה</div></div><div class=cr><button class='cb mb' onclick='adjH(-1)'>-</button><span id=e-hrs style='color:var(--tx);font-weight:700;font-size:18px;min-width:36px;text-align:center'>"+eHrs+"</span><button class='cb pb' onclick='adjH(1)'>+</button></div></div>";
+    hw.innerHTML="<div class=xb2 style='background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);margin-bottom:10px'><div><div style='font-size:13px;font-weight:700;color:#8B5CF6'>שעות עבודה</div><div style='font-size:11px;color:var(--dm);margin-top:1px'>"+formatMoney(n(e.hr))+" לשעה</div></div><div class=cr><button class='cb mb' onclick='adjH(-1)'>-</button><span id=e-hrs style='color:#8B5CF6;font-weight:800;font-size:18px;min-width:36px;text-align:center'>"+eHrs+"</span><button class='cb pb' onclick='adjH(1)'>+</button></div></div>";
     var eh=document.getElementById("e-hrow"); if(eh)eh.style.display="flex";
   }else{if(hw)hw.innerHTML="";var eh2=document.getElementById("e-hrow");if(eh2)eh2.style.display="none";}
   rEntrySvcs(); openM("m-entry");
