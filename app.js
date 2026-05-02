@@ -124,45 +124,67 @@ function registerBiz() {
 
 /* ── SITE LOGIN (phone + sitePassword) ── */
 function siteLogin() {
-  var phone    = document.getElementById("login-phone").value.trim().replace(/\D/g,"");
-  var sitePwd  = document.getElementById("login-site-pass").value.replace(/\s/g,"");
-  var err      = document.getElementById("login-err");
+  var phone   = document.getElementById("login-phone").value.trim().replace(/\D/g,"");
+  var sitePwd = document.getElementById("login-site-pass").value.replace(/\s/g,"");
+  var err     = document.getElementById("login-err");
+  var btn     = document.getElementById("login-btn-submit");
 
   err.textContent = "";
-  if(!phone)                   { err.textContent="נא להזין מספר טלפון"; return; }
+  if(!phone)                    { err.textContent="נא להזין מספר טלפון"; return; }
   if(!/^\d{4}$/.test(sitePwd)) { err.textContent="נא להזין סיסמה של 4 ספרות"; return; }
 
-  err.textContent="בודק...";
+  err.textContent = "בודק...";
+  btn.disabled = true;
+
   db.ref("phones/"+phone).once("value").then(function(snap){
-    var code = snap.val();
-    if(!code){ err.textContent="מספר טלפון לא נמצא"; return; }
-
-    db.ref("businesses/"+code+"/data").once("value").then(function(snap2){
-      var data = snap2.val();
-      if(!data){ err.textContent="שגיאה, נסה שוב"; return; }
-
-      /* debug - לא מדפיסים סיסמאות */
-      console.log("[LOGIN] business found, phone:", phone,
-        "entered length:", sitePwd.length,
-        "stored sitePassword length:", (data.sitePassword||"").length,
-        "fields match:", data.sitePassword === sitePwd);
-
-      /* בודקים רק sitePassword */
-      if((data.sitePassword||"").replace(/\s/g,"") !== sitePwd){
-        err.textContent="סיסמת כניסה שגויה"; return;
+    var businessId = snap.val();
+    if(!businessId){
+      err.textContent = "מספר טלפון לא נמצא במערכת";
+      btn.disabled = false;
+      return Promise.reject("no_phone");
+    }
+    return db.ref("businesses/"+businessId).once("value").then(function(snap2){
+      var biz = snap2.val();
+      if(!biz || !biz.data){
+        err.textContent = "עסק לא נמצא, נסה שוב";
+        btn.disabled = false;
+        return Promise.reject("no_biz");
+      }
+      var data = biz.data;
+      if(!data.sitePassword){
+        err.textContent = "שגיאת הגדרות, צור קשר עם התמיכה";
+        btn.disabled = false;
+        return Promise.reject("no_sitePassword");
       }
 
-      err.textContent="";
-      bizCode = code;
+      console.log("[LOGIN] business found, phone:", phone,
+        "entered length:", sitePwd.length,
+        "stored sitePassword length:", data.sitePassword.length,
+        "match:", data.sitePassword.replace(/\s/g,"") === sitePwd);
+
+      if(data.sitePassword.replace(/\s/g,"") !== sitePwd){
+        err.textContent = "סיסמת כניסה שגויה";
+        btn.disabled = false;
+        return;
+      }
+
+      err.textContent = "";
+      btn.disabled = false;
+      bizCode = businessId;
       S = data;
-      try{localStorage.setItem("crewos_biz", code);}catch(e){}
-      try{localStorage.setItem("crewos_cache_"+code, JSON.stringify(S));}catch(e){}
+      try{localStorage.setItem("crewos_biz", businessId);}catch(e){}
+      try{localStorage.setItem("crewos_cache_"+businessId, JSON.stringify(S));}catch(e){}
       document.getElementById("biz-name-display").textContent = S.bizName||"המספרה";
       lSel="owner"; pin="";
       renderLogin();
       showPg("pg-login");
     });
-  }).catch(function(){ err.textContent="שגיאת חיבור, נסה שוב"; });
+  }).catch(function(e){
+    if(e==="no_phone"||e==="no_biz"||e==="no_sitePassword") return;
+    console.error("[LOGIN ERROR]", e);
+    err.textContent = "שגיאת חיבור, נסה שוב";
+    btn.disabled = false;
+  });
 }
 
 /* ── SELECT USER ── */
