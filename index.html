@@ -5,11 +5,20 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CrewOS">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B0B0F">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="icon" type="image/png" href="apple-touch-icon.png">
 <title>CrewOS</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<link rel="stylesheet" href="style.css?v=1.1.0">
+<link rel="stylesheet" href="style.css?v=1.2.2">
 </head>
 <body>
 
@@ -17,7 +26,7 @@
 <div id="pg-welcome" class="pg on">
 <div class="cw2">
   <div style="text-align:center;margin-bottom:40px">
-    <div style="font-size:44px;font-weight:900;color:#fff;letter-spacing:-1px">CREW<span style="color:var(--or)">OS</span></div>
+    <div style="font-size:44px;font-weight:900;color:var(--tx);letter-spacing:-1px">CREWOS</div>
     <div style="font-size:13px;color:var(--mu);margin-top:8px;letter-spacing:.5px">מערכת ניהול מספרה</div>
   </div>
   <div style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px">
@@ -62,13 +71,13 @@
     <div class="fw"><div class="fl">שם המספרה</div><input type="text" id="reg-biz-name" placeholder="לדוגמה: מספרת כהן"></div>
     <div class="fw"><div class="fl">שם בעל העסק</div><input type="text" id="reg-owner-name" placeholder="שם מלא"></div>
     <div class="fw"><div class="fl">מספר טלפון</div><input type="tel" id="reg-phone" placeholder="05X-XXXXXXX" inputmode="tel"></div>
-    <div style="background:rgba(16,185,129,.06);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid rgba(16,185,129,.15)">
-      <div style="font-size:12px;color:var(--gr);font-weight:700;margin-bottom:2px">סיסמת כניסה לעסק</div>
+    <div style="background:var(--btn);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid var(--br)">
+      <div style="font-size:12px;color:var(--tx);font-weight:700;margin-bottom:2px">סיסמת כניסה לעסק</div>
       <div style="font-size:11px;color:var(--dm)">לכל העובדים ובעל העסק — לכניסה ראשונית לאתר</div>
     </div>
     <div class="fw"><div class="fl">סיסמת כניסה לעסק (4 ספרות)</div><input type="password" id="reg-site-pass" maxlength="4" inputmode="numeric" placeholder="••••"></div>
-    <div style="background:rgba(232,120,42,.06);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid rgba(232,120,42,.15)">
-      <div style="font-size:12px;color:var(--or);font-weight:700;margin-bottom:2px">סיסמת בעל העסק</div>
+    <div style="background:var(--btn);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid var(--br)">
+      <div style="font-size:12px;color:var(--tx);font-weight:700;margin-bottom:2px">סיסמת בעל העסק</div>
       <div style="font-size:11px;color:var(--dm)">לבעל העסק בלבד — לניהול, הגדרות, ופתיחת ימים</div>
     </div>
     <div class="fw"><div class="fl">סיסמת בעל העסק (4 ספרות)</div><input type="password" id="reg-owner-pass" maxlength="4" inputmode="numeric" placeholder="••••"></div>
@@ -85,7 +94,7 @@
 <div class="cw2">
   <div style="text-align:center;margin-bottom:24px">
     <div style="font-size:52px;margin-bottom:10px">✅</div>
-    <div style="font-size:22px;font-weight:900;color:var(--or)">העסק נרשם!</div>
+    <div style="font-size:22px;font-weight:900;color:var(--tx)">העסק נרשם!</div>
     <div id="succ-name" style="font-size:14px;color:var(--mu);margin-top:6px"></div>
   </div>
   <div style="width:100%;max-width:360px">
@@ -96,11 +105,11 @@
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <span style="font-size:13px;color:var(--mu)">טלפון לכניסה</span>
-        <span id="succ-phone" style="font-size:13px;font-weight:700;color:var(--or)"></span>
+        <span id="succ-phone" style="font-size:13px;font-weight:700;color:var(--tx)"></span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:13px;color:var(--mu)">סיסמת כניסה לעסק</span>
-        <span id="succ-site-pass" style="font-size:20px;font-weight:900;color:var(--gr);letter-spacing:4px"></span>
+        <span id="succ-site-pass" style="font-size:20px;font-weight:900;color:var(--tx);letter-spacing:4px"></span>
       </div>
       <div style="font-size:11px;color:var(--dm);margin-top:12px;padding-top:12px;border-top:1px solid var(--br)">שמור פרטים אלה. שלח סיסמת כניסה לעובדים שלך.</div>
     </div>
@@ -113,13 +122,13 @@
 <div id="pg-login" class="pg">
 <div class="cw2">
   <div style="text-align:center;margin-bottom:24px">
-    <div style="font-size:22px;font-weight:900;color:var(--or)">CREWOS</div>
+    <div style="font-size:22px;font-weight:900;color:var(--tx)">CREWOS</div>
     <div id="biz-name-display" style="font-size:16px;font-weight:700;margin-top:4px"></div>
   </div>
   <div class="card" style="width:100%;max-width:360px">
     <div style="font-size:12px;color:var(--mu);margin-bottom:12px;font-weight:600;letter-spacing:.3px">מי נכנס?</div>
-    <div id="lo-owner" class="eo" style="border-color:var(--or);background:rgba(232,120,42,.08)">
-      <div class="av" style="width:42px;height:42px;background:rgba(232,120,42,.15);border:2px solid var(--or);font-size:11px;font-weight:900;color:var(--or)">BOS</div>
+    <div id="lo-owner" class="eo" style="border-color:var(--tx);background:rgba(232,120,42,.08)">
+      <div class="av" style="width:42px;height:42px;background:var(--btn);border:1px solid var(--br2);font-size:11px;font-weight:900;color:var(--tx)">BOS</div>
       <div>
         <div style="font-weight:700;font-size:14px">בעל העסק</div>
         <div style="color:var(--dm);font-size:11px">גישה מלאה לניהול</div>
@@ -129,7 +138,7 @@
     <div style="margin-top:18px;text-align:center">
       <div id="login-hint" style="font-size:12px;color:var(--mu);margin-bottom:12px"></div>
       <div class="pds"><div class="dt" id="d0"></div><div class="dt" id="d1"></div><div class="dt" id="d2"></div><div class="dt" id="d3"></div></div>
-      <div id="pin-err" style="color:var(--re);font-size:12px;min-height:18px;margin-bottom:10px"></div>
+      <div id="pin-err" style="color:var(--tx2);font-size:12px;min-height:18px;margin-bottom:10px"></div>
       <div class="pg2">
         <button class="pk" onclick="pk('1')">1</button>
         <button class="pk" onclick="pk('2')">2</button>
@@ -156,13 +165,13 @@
   <div class="hdr">
     <div class="hr">
       <div>
-        <div style="font-size:18px;font-weight:900;color:var(--or)">CREWOS</div>
+        <div style="font-size:18px;font-weight:900;color:var(--tx)">CREWOS</div>
         <div id="ow-date" style="font-size:11px;color:var(--mu);margin-top:3px"></div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <div style="text-align:left">
           <div style="font-size:10px;color:var(--dm)">הכנסה היום</div>
-          <div id="ow-today" style="font-size:22px;font-weight:900;color:var(--or)">₪0</div>
+          <div id="ow-today" style="font-size:22px;font-weight:900;color:var(--tx)">₪0</div>
         </div>
         <button onclick="logout()" class="btn-secondary" style="height:36px;padding:0 12px;font-size:12px">יציאה</button>
       </div>
@@ -223,10 +232,10 @@
   </div>
   <div class="sc" style="padding-top:20px">
     <div class="card" style="border-color:rgba(232,120,42,.2)">
-      <div style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--or)">שכירת כיסא</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--tx)">שכירת כיסא</div>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="color:var(--mu);font-size:13px">סכום חודשי</div>
-        <div id="chair-rent" style="font-size:24px;font-weight:900;color:var(--or)">₪0</div>
+        <div id="chair-rent" style="font-size:24px;font-weight:900;color:var(--tx)">₪0</div>
       </div>
       <div style="font-size:12px;color:var(--dm);margin-top:12px">בעל העסק מנהל את הנתונים.</div>
     </div>
@@ -241,7 +250,7 @@
   <div id="oe-svcs"></div>
   <div class="tb">
     <div class="tr"><span style="color:var(--mu);font-size:13px">סה"כ שירותים</span><span id="oe-tcnt" style="font-weight:700">0</span></div>
-    <div class="tr" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--br)"><span style="color:var(--mu);font-size:13px">סה"כ הכנסה</span><span id="oe-tamt" style="color:var(--or);font-size:20px;font-weight:900">₪0</span></div>
+    <div class="tr" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--br)"><span style="color:var(--mu);font-size:13px">סה"כ הכנסה</span><span id="oe-tamt" style="color:var(--tx);font-size:20px;font-weight:900">₪0</span></div>
   </div>
   <button id="oe-save" class="bg" onclick="saveOwnerEntry()" style="width:100%;height:54px;font-size:16px;margin-top:16px">שמור יום</button>
 </div>
@@ -255,23 +264,23 @@
   <div style="font-size:11px;color:var(--mu);font-weight:700;margin-bottom:10px;letter-spacing:.5px">שירותים</div>
   <div id="e-svcs"></div>
   <div class="xb2" style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15)">
-    <div style="font-size:13px;font-weight:700;color:var(--re)">ביטולים</div>
-    <div class="cr"><button class="cb mr" onclick="adjC(-1)">-</button><span class="cv" id="e-cancel" style="color:var(--re)">0</span><button class="cb pr" onclick="adjC(1)">+</button></div>
+    <div style="font-size:13px;font-weight:700;color:var(--tx2)">ביטולים</div>
+    <div class="cr"><button class="cb mr" onclick="adjC(-1)">-</button><span class="cv" id="e-cancel" style="color:var(--tx2)">0</span><button class="cb pr" onclick="adjC(1)">+</button></div>
   </div>
   <div class="xb2" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);margin-top:8px">
-    <div style="font-size:13px;font-weight:700;color:var(--gr)">טיפ</div>
+    <div style="font-size:13px;font-weight:700;color:var(--tx2)">טיפ</div>
     <div class="cr">
       <button class="cb mt" onclick="adjT(-5)" style="font-size:12px;width:32px;height:32px">-5</button>
-      <span id="e-tip" style="color:var(--gr);font-weight:800;font-size:17px;min-width:44px;text-align:center">0</span>
+      <span id="e-tip" style="color:var(--tx2);font-weight:800;font-size:17px;min-width:44px;text-align:center">0</span>
       <button class="cb pt" onclick="adjT(5)" style="font-size:12px;width:32px;height:32px">+5</button>
     </div>
   </div>
   <div class="tb">
     <div class="tr"><span style="color:var(--mu);font-size:13px">שירותים</span><span id="e-tcnt" style="font-weight:700">0</span></div>
-    <div class="tr"><span style="color:var(--mu);font-size:13px">ביטולים</span><span id="e-tcan" style="font-weight:700;color:var(--re)">0</span></div>
-    <div class="tr"><span style="color:var(--mu);font-size:13px">טיפ</span><span id="e-ttip" style="font-weight:700;color:var(--gr)">0</span></div>
-    <div class="tr" id="e-hrow" style="display:none"><span style="color:var(--mu);font-size:13px">שכר שעות</span><span id="e-hpay" style="font-weight:700;color:var(--pu)">₪0</span></div>
-    <div class="tr" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--br)"><span style="color:var(--mu);font-size:13px">הכנסת שירותים</span><span id="e-tamt" style="color:var(--or);font-size:20px;font-weight:900">₪0</span></div>
+    <div class="tr"><span style="color:var(--mu);font-size:13px">ביטולים</span><span id="e-tcan" style="font-weight:700;color:var(--tx2)">0</span></div>
+    <div class="tr"><span style="color:var(--mu);font-size:13px">טיפ</span><span id="e-ttip" style="font-weight:700;color:var(--tx2)">0</span></div>
+    <div class="tr" id="e-hrow" style="display:none"><span style="color:var(--mu);font-size:13px">שכר שעות</span><span id="e-hpay" style="font-weight:700;color:var(--tx2)">₪0</span></div>
+    <div class="tr" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--br)"><span style="color:var(--mu);font-size:13px">הכנסת שירותים</span><span id="e-tamt" style="color:var(--tx);font-size:20px;font-weight:900">₪0</span></div>
   </div>
   <button id="e-save" class="bg" onclick="saveEntry()" style="width:100%;height:54px;font-size:16px;margin-top:16px">שמור יום</button>
 </div>
@@ -288,7 +297,7 @@
   <div id="ed-models"></div>
   <div id="ed-mfields"></div>
   <div id="ed-spw" style="background:rgba(245,158,11,.05);border-radius:12px;padding:14px;border:1px solid rgba(245,158,11,.15);margin-bottom:14px;display:none">
-    <div style="font-size:12px;color:var(--ye);font-weight:700;margin-bottom:10px">אחוז לעובד לפי שירות</div>
+    <div style="font-size:12px;color:var(--tx2);font-weight:700;margin-bottom:10px">אחוז לעובד לפי שירות</div>
     <div id="ed-spct"></div>
   </div>
   <button onclick="saveEdit()" class="bg" style="width:100%;height:52px;font-size:16px;margin-bottom:10px">שמור שינויים</button>
@@ -341,6 +350,6 @@
 </div>
 </div>
 
-<script src="app.js?v=1.1.0"></script>
+<script src="app.js?v=1.2.2"></script>
 </body>
 </html>
