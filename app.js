@@ -37,7 +37,7 @@ function td() { return new Date().toISOString().slice(0,10); }
 function ini(n) { return n.split(" ").map(function(w){return w[0]||"";}).slice(0,2).join(""); }
 function logout() { ses=null; pin=""; lSel="owner"; renderLogin(); showPg("pg-login"); }
 function changeBiz() { ses=null; pin=""; lSel="owner"; bizCode=null; S=null; localStorage.removeItem("crewos_biz"); showPg("pg-welcome"); }
-function gsp(emp,sid) { if(emp.sp&&emp.sp[sid]!=null)return emp.sp[sid]; return emp.pct||50; }
+function gsp(emp,sid) { if(emp.sp&&emp.sp[sid]!=null)return Number(emp.sp[sid])||0; return Number(emp.pct)||50; }
 
 function sv() {
   if(!bizCode||!S) return;
@@ -75,8 +75,8 @@ function ensureS(data) {
   data.svcs = data.svcs || [{id:"s1",lbl:"תספורת",price:60},{id:"s2",lbl:"זקן",price:40},{id:"s3",lbl:"שניהם",price:90}];
   data.ownerEntries = data.ownerEntries || {};
   data.entries = data.entries || {};
-  data.nid = data.nid || 3;
-  data.goal = data.goal || 0;
+  data.nid = n(data.nid) || 3;
+  data.goal = n(data.goal);
   /* תמיכה בשדות ישנים */
   if(!data.ownerPassword && (data.ownerPin||data.accessPass||data.ownerPass)) {
     data.ownerPassword = data.ownerPin || data.accessPass || data.ownerPass;
@@ -347,19 +347,21 @@ function doLogin(){
 }
 
 /* ── CALC ── */
+function n(v){ return Number(v)||0; }  /* helper: safe number conversion */
 function calc(list,emp){
   var gross=0,es=0,tips=0,hpay=0;
   list.forEach(function(e){
-    gross+=e.total; tips+=(e.tip||0);
-    if(emp.pm==="hourly") hpay+=(e.hrs||0)*(emp.hr||0);
+    gross+=n(e.total); tips+=n(e.tip);
+    if(emp.pm==="hourly") hpay+=n(e.hrs)*n(emp.hr);
     (e.svcs||[]).forEach(function(s){
-      if(emp.pm==="percent"||emp.pm==="chair_pct") es+=s.cnt*s.price*(gsp(emp,s.id)/100);
+      if(emp.pm==="percent"||emp.pm==="chair_pct")
+        es+=n(s.cnt)*n(s.price)*(gsp(emp,s.id)/100);
     });
   });
   var os=0;
   if(emp.pm==="hourly"){es=hpay+tips;os=gross-hpay;}
-  else if(emp.pm==="chair"){es=gross+tips;os=emp.cr||0;}
-  else if(emp.pm==="chair_pct"){es+=tips;os=gross-(es-tips)+(emp.cr||0);}
+  else if(emp.pm==="chair"){es=gross+tips;os=n(emp.cr);}
+  else if(emp.pm==="chair_pct"){es+=tips;os=gross-(es-tips)+n(emp.cr);}
   else{es+=tips;os=gross-es+tips;}
   return{gross:gross,es:es,os:os,hpay:hpay};
 }
@@ -370,14 +372,14 @@ function rOwner(){
   var tt=0,mt=0,om=0,tc=0;
   (S.emps||[]).forEach(function(e){
     var all=Object.values((S.entries&&S.entries[e.id])||{}),te=((S.entries&&S.entries[e.id])||{})[td()],r=calc(all,e);
-    if(te){tt+=te.total;tc+=(te.cancels||0);}
-    mt+=r.gross; om+=r.os;
-    if(e.pm==="chair"||e.pm==="chair_pct") om+=(e.cr||0);
+    if(te){tt+=n(te.total);tc+=n(te.cancels);}
+    mt+=n(r.gross); om+=n(r.os);
+    if(e.pm==="chair"||e.pm==="chair_pct") om+=n(e.cr);
   });
   var ownerAll=Object.values(S.ownerEntries||{});
   var ownerTe=(S.ownerEntries||{})[td()];
-  tt+=(ownerTe?ownerTe.total:0);
-  var ownerMonth=ownerAll.reduce(function(s,e){return s+e.total;},0);
+  tt+=ownerTe?n(ownerTe.total):0;
+  var ownerMonth=ownerAll.reduce(function(s,e){return s+n(e.total);},0);
   mt+=ownerMonth; om+=ownerMonth;
   document.getElementById("ow-today").textContent="\u20AA"+tt;
   document.getElementById("ow-stats").innerHTML=
@@ -433,8 +435,8 @@ function rEmps(){
     var ee=(S.entries&&S.entries[e.id])||{},te=ee[td()],all=Object.values(ee);
     var td2=calc(te?[te]:[],e),mo=calc(all,e),hasT=!!te;
     var ml=(MDL.find(function(m){return m.id===e.pm;})||{lbl:""}).lbl;
-    var tc=all.reduce(function(s,x){return s+(x.cancels||0);},0);
-    var oMon=mo.os+(e.pm==="chair"||e.pm==="chair_pct"?(e.cr||0):0);
+    var tc=all.reduce(function(s,x){return s+n(x.cancels);},0);
+    var oMon=n(mo.os)+(e.pm==="chair"||e.pm==="chair_pct"?n(e.cr):0);
     var isC=e.pm==="chair";
     h+="<div class=card><div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:12px'>";
     h+="<div style='display:flex;align-items:center;gap:10px'>";
@@ -471,7 +473,7 @@ function rReport(){
   var dks=Object.keys(days).sort(),mx=Math.max.apply(null,dks.map(function(k){return days[k];}).concat([1]));
   var cH="";
   if(dks.length){cH="<div class=cw3><div style='font-size:11px;color:#888;margin-bottom:8px;font-weight:700'>הכנסות יומיות</div><div class=cb2>";dks.forEach(function(k){cH+="<div class=bw><div class=bf style='height:"+Math.round(days[k]/mx*100)+"%'></div><div class=bl2>"+parseInt(k.slice(8))+"</div></div>";});cH+="</div></div>";}
-  var mx2=Math.max.apply(null,(S.emps||[]).map(function(e){return calc(Object.values((S.entries&&S.entries[e.id])||{}),e).gross;}).concat([ownerMonth,1]));
+  var mx2=Math.max.apply(null,(S.emps||[]).map(function(e){return n(calc(Object.values((S.entries&&S.entries[e.id])||{}),e).gross);}).concat([n(ownerMonth),1]));
   var cpH="<div class=card><div style='font-size:13px;font-weight:700;margin-bottom:12px'>השוואה</div>";
   cpH+="<div class=cbr><div class=cnr><span>"+S.ownerName+"</span><span style='color:#E8782A'>\u20AA"+ownerMonth+"</span></div><div class=cbg><div class=cf style='width:"+Math.round(ownerMonth/mx2*100)+"%;background:#E8782A'></div></div></div>";
   (S.emps||[]).forEach(function(e){var r=calc(Object.values((S.entries&&S.entries[e.id])||{}),e),p=Math.round(r.gross/mx2*100);cpH+="<div class=cbr><div class=cnr><span>"+e.name+"</span><span style='color:"+e.color+"'>\u20AA"+r.gross+"</span></div><div class=cbg><div class=cf style='width:"+p+"%;background:"+e.color+"'></div></div></div>";});
@@ -542,19 +544,18 @@ function rOwnerEntrySvcs(){
 function adjOE(id,d){oeCtr[id]=Math.max(0,(oeCtr[id]||0)+d);document.getElementById("oecv-"+id).textContent=oeCtr[id];updOETot();}
 function updOETot(){
   var cnt=0,amt=0;
-  (S.svcs||[]).forEach(function(s){cnt+=oeCtr[s.id]||0;amt+=(oeCtr[s.id]||0)*s.price;});
+  (S.svcs||[]).forEach(function(s){cnt+=n(oeCtr[s.id]);amt+=n(oeCtr[s.id])*n(s.price);});
   document.getElementById("oe-tcnt").textContent=cnt;
   document.getElementById("oe-tamt").textContent="\u20AA"+amt;
   /* כפתור שמור תמיד פעיל כשהחלון פתוח */
   var b=document.getElementById("oe-save");b.disabled=false;b.style.opacity="1";
 }
 function saveOwnerEntry(){
-  var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:oeCtr[s.id]||0,price:s.price};});
-  var ts=svcs.reduce(function(s,x){return s+x.cnt;},0);
-  var tot=svcs.reduce(function(s,x){return s+x.cnt*x.price;},0);
+  var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:n(oeCtr[s.id]),price:n(s.price)};});
+  var ts=svcs.reduce(function(s,x){return s+n(x.cnt);},0);
+  var tot=svcs.reduce(function(s,x){return s+n(x.cnt)*n(x.price);},0);
   if(!S.ownerEntries) S.ownerEntries={};
-  /* שומרים גם אם הכל 0 — מעדכן דיווח קיים */
-  S.ownerEntries[td()]={date:td(),svcs:svcs,totalSvcs:ts,total:tot};
+  S.ownerEntries[td()]={date:td(),svcs:svcs,totalSvcs:n(ts),total:n(tot)};
   sv(); closeM("m-owner-entry"); rOwner();
 }
 
@@ -620,9 +621,9 @@ function adjT(d){eTip=Math.max(0,eTip+d);document.getElementById("e-tip").textCo
 function adjH(d){eHrs=Math.max(0,eHrs+d);var el=document.getElementById("e-hrs");if(el)el.textContent=eHrs;updTot();}
 function updTot(){
   var cnt=0,amt=0;
-  (S.svcs||[]).forEach(function(s){cnt+=eCtr[s.id]||0;amt+=(eCtr[s.id]||0)*s.price;});
+  (S.svcs||[]).forEach(function(s){cnt+=n(eCtr[s.id]);amt+=n(eCtr[s.id])*n(s.price);});
   var e=(S.emps||[]).find(function(x){return x.id===eEid;})||{};
-  var hp=e.pm==="hourly"?eHrs*(e.hr||0):0;
+  var hp=e.pm==="hourly"?n(eHrs)*n(e.hr):0;
   document.getElementById("e-tcnt").textContent=cnt;
   document.getElementById("e-tcan").textContent=eCan;
   document.getElementById("e-ttip").textContent=eTip;
@@ -632,13 +633,12 @@ function updTot(){
   var b=document.getElementById("e-save");b.disabled=false;b.style.opacity="1";
 }
 function saveEntry(){
-  var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:eCtr[s.id]||0,price:s.price};});
-  var ts=svcs.reduce(function(s,x){return s+x.cnt;},0);
-  var tot=svcs.reduce(function(s,x){return s+x.cnt*x.price;},0);
+  var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:n(eCtr[s.id]),price:n(s.price)};});
+  var ts=svcs.reduce(function(s,x){return s+n(x.cnt);},0);
+  var tot=svcs.reduce(function(s,x){return s+n(x.cnt)*n(x.price);},0);
   if(!S.entries) S.entries={};
   if(!S.entries[eEid]) S.entries[eEid]={};
-  /* שומרים גם אם הכל 0 — מעדכן דיווח קיים */
-  S.entries[eEid][td()]={date:td(),svcs:svcs,totalSvcs:ts,total:tot,cancels:eCan,tip:eTip,hrs:eHrs};
+  S.entries[eEid][td()]={date:td(),svcs:svcs,totalSvcs:n(ts),total:n(tot),cancels:n(eCan),tip:n(eTip),hrs:n(eHrs)};
   sv(); closeM("m-entry"); if(ses.role==="owner")rOwner();else rEmp();
 }
 
@@ -681,10 +681,10 @@ function saveEdit(){
   e.av=ini(e.name);
   var np=document.getElementById("ed-pin").value.trim();if(np.length===4&&!isNaN(np))e.pin=np;
   e.pm=edM;
-  var ep=document.getElementById("ef-pct");if(ep)e.pct=parseInt(ep.value)||50;
-  var eh=document.getElementById("ef-hr");if(eh)e.hr=parseInt(eh.value)||0;
-  var ec=document.getElementById("ef-cr");if(ec)e.cr=parseInt(ec.value)||0;
-  e.sp=e.sp||{};(S.svcs||[]).forEach(function(s){var el=document.getElementById("sp-"+s.id);if(el)e.sp[s.id]=parseInt(el.value)||0;});
+  var ep=document.getElementById("ef-pct");if(ep)e.pct=n(parseInt(ep.value))||50;
+  var eh=document.getElementById("ef-hr");if(eh)e.hr=n(parseInt(eh.value));
+  var ec=document.getElementById("ef-cr");if(ec)e.cr=n(parseInt(ec.value));
+  e.sp=e.sp||{};(S.svcs||[]).forEach(function(s){var el=document.getElementById("sp-"+s.id);if(el)e.sp[s.id]=n(parseInt(el.value));});
   sv(); closeM("m-edit"); rOwner();
 }
 
@@ -707,9 +707,9 @@ function saveAdd(){
   var np=document.getElementById("ad-pin").value.trim();if(np.length!==4||isNaN(np))np="1234";
   var c=COLS[(S.emps||[]).length%COLS.length];
   var e={id:S.nid++,name:name,role:role,av:ini(name),pm:addM,pct:50,hr:0,cr:0,sp:{},color:c,pin:np};
-  var ap=document.getElementById("af-pct");if(ap)e.pct=parseInt(ap.value)||50;
-  var ah=document.getElementById("af-hr");if(ah)e.hr=parseInt(ah.value)||0;
-  var ac=document.getElementById("af-cr");if(ac)e.cr=parseInt(ac.value)||0;
+  var ap=document.getElementById("af-pct");if(ap)e.pct=n(parseInt(ap.value))||50;
+  var ah=document.getElementById("af-hr");if(ah)e.hr=n(parseInt(ah.value));
+  var ac=document.getElementById("af-cr");if(ac)e.cr=n(parseInt(ac.value));
   (S.emps=S.emps||[]).push(e); sv(); closeM("m-add"); renderLogin(); rOwner();
 }
 
@@ -735,17 +735,17 @@ function openEditSvc(id) {
 }
 
 function saveSvc() {
-  var n = document.getElementById("sv-name").value.trim();
+  var svcName = document.getElementById("sv-name").value.trim();
   var pr = parseInt(document.getElementById("sv-price").value);
   var errEl = document.getElementById("sv-err");
-  if(!n) { errEl.textContent = "נא להזין שם שירות"; return; }
+  if(!svcName) { errEl.textContent = "נא להזין שם שירות"; return; }
   if(isNaN(pr) || pr < 0) { errEl.textContent = "נא להזין מחיר תקין"; return; }
   errEl.textContent = "";
   if(edSvc) {
     var s = (S.svcs||[]).find(function(x){ return x.id === edSvc; });
-    if(s) { s.lbl = n; s.price = pr; }
+    if(s) { s.lbl = n; s.price = Number(pr); }
   } else {
-    (S.svcs=S.svcs||[]).push({ id: "s" + Date.now(), lbl: n, price: pr });
+    (S.svcs=S.svcs||[]).push({ id: "s" + Date.now(), lbl: svcName, price: n(pr) });
   }
   sv();
   closeM("m-svc");
@@ -759,7 +759,7 @@ function delSvc(id) {
   rSvcs();
 }
 
-function saveGoal(){ S.goal=parseInt(document.getElementById("goal-v").value)||0; sv(); closeM("m-goal"); rReport(); }
+function saveGoal(){ S.goal=n(parseInt(document.getElementById("goal-v").value)); sv(); closeM("m-goal"); rReport(); }
 
 /* ── INIT ── */
 (function(){
