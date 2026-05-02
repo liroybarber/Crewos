@@ -335,7 +335,7 @@ function doLogin(){
         av.textContent=emp.av; av.style.background=emp.color+"22";
         av.style.border="2px solid "+emp.color; av.style.color=emp.color;
         document.getElementById("chair-name").textContent=emp.name;
-        document.getElementById("chair-rent").textContent="\u20AA"+(emp.cr||0);
+        document.getElementById("chair-rent").textContent=formatMoney(emp.cr);
         showPg("pg-chair");
       } else { rEmp(); showPg("pg-emp"); }
     }
@@ -348,6 +348,10 @@ function doLogin(){
 
 /* ── CALC ── */
 function n(v){ return Number(v)||0; }  /* helper: safe number conversion */
+function formatMoney(v){
+  var num = Math.round(n(v)*100)/100;
+  return "₪" + (num % 1 === 0 ? num : num.toFixed(2));
+}
 function calc(list,emp){
   var gross=0,es=0,tips=0,hpay=0;
   list.forEach(function(e){
@@ -363,7 +367,8 @@ function calc(list,emp){
   else if(emp.pm==="chair"){es=gross+tips;os=n(emp.cr);}
   else if(emp.pm==="chair_pct"){es+=tips;os=gross-(es-tips)+n(emp.cr);}
   else{es+=tips;os=gross-es+tips;}
-  return{gross:gross,es:es,os:os,hpay:hpay};
+  var r2=function(x){return Math.round(n(x)*100)/100;};
+  return{gross:r2(gross),es:r2(es),os:r2(os),hpay:r2(hpay)};
 }
 
 /* ── OWNER DASHBOARD ── */
@@ -381,10 +386,10 @@ function rOwner(){
   tt+=ownerTe?n(ownerTe.total):0;
   var ownerMonth=ownerAll.reduce(function(s,e){return s+n(e.total);},0);
   mt+=ownerMonth; om+=ownerMonth;
-  document.getElementById("ow-today").textContent="\u20AA"+tt;
+  document.getElementById("ow-today").textContent=formatMoney(tt);
   document.getElementById("ow-stats").innerHTML=
-    sb("סה\"כ חודש","\u20AA"+mt,"","#E8782A")+
-    sb("רווח שלך","\u20AA"+om,"","#5ABFA0")+
+    sb("סה\"כ חודש",formatMoney(mt),"","#E8782A")+
+    sb("רווח שלך",formatMoney(om),"","#5ABFA0")+
     sb("ביטולים",tc,"היום","#E06060");
   rOwTab(owT);
 }
@@ -414,7 +419,7 @@ function rToday(){
   h+="<div style='display:flex;align-items:center;gap:10px'>";
   h+="<div class=av style='width:38px;height:38px;background:#E8782A22;border:2px solid #E8782A;font-size:11px;font-weight:900;color:#E8782A'>BOS</div>";
   h+="<div><div style='font-weight:700;font-size:14px'>"+S.ownerName+"</div><div style='color:#555;font-size:11px'>"+ownerSm+"</div></div></div>";
-  h+="<div style='text-align:left'><div style='color:#E8782A;font-weight:800;font-size:17px'>\u20AA"+ownerGross+"</div><div style='color:#5ABFA0;font-size:11px'>הכנסה שלך</div></div></div>";
+  h+="<div style='text-align:left'><div style='color:#E8782A;font-weight:800;font-size:17px'>"+formatMoney(ownerGross)+"</div><div style='color:#5ABFA0;font-size:11px'>הכנסה שלך</div></div></div>";
   h+="<button onclick='openOwnerEntry()' style='width:100%;height:36px;border-radius:10px;margin-top:10px;background:"+(ownerTe?"#2a2a1a":"#E8782A22")+";border:1px solid "+(ownerTe?"#444":"#E8782A")+";color:"+(ownerTe?"#888":"#E8782A")+";font-size:13px;font-weight:700'>"+(ownerTe?"עדכן יום שלי":"הזן יום שלי")+"</button></div>";
   (S.emps||[]).forEach(function(e){
     var te=((S.entries&&S.entries[e.id])||{})[td()],r=calc(te?[te]:[],e);
@@ -424,7 +429,7 @@ function rToday(){
     h+="<div style='display:flex;align-items:center;gap:10px'>";
     h+="<div class=av style='width:38px;height:38px;background:"+e.color+"22;border:2px solid "+e.color+";font-size:12px;color:"+e.color+"'>"+e.av+"</div>";
     h+="<div><div style='font-weight:700;font-size:14px'>"+e.name+"</div><div style='color:#555;font-size:11px'>"+sm+(c2?" ביטולים:"+c2:"")+(tip?" טיפ:"+tip:"")+"</div></div></div>";
-    h+="<div style='text-align:left'><div style='color:#E8782A;font-weight:800;font-size:17px'>\u20AA"+r.gross+"</div><div style='color:#5ABFA0;font-size:11px'>שלך: \u20AA"+r.os+"</div></div></div></div>";
+    h+="<div style='text-align:left'><div style='color:#E8782A;font-weight:800;font-size:17px'>"+formatMoney(r.gross)+"</div><div style='color:#5ABFA0;font-size:11px'>שלך: "+formatMoney(r.os)+"</div></div></div></div>";
   });
   document.getElementById("t-today").innerHTML=h;
 }
@@ -444,8 +449,8 @@ function rEmps(){
     h+="<div><div style='font-weight:800;font-size:15px'>"+e.name+"</div><div style='color:#555;font-size:11px'>"+e.role+"</div></div></div>";
     h+="<span class=bdg style='background:"+e.color+"22;color:"+e.color+";border:1px solid "+e.color+"44'>"+ml+"</span></div>";
     h+="<div class=stats style='margin-top:0;margin-bottom:10px'>";
-    if(isC){h+=sb("שכירת כיסא","\u20AA"+(e.cr||0),"חודשי","#E8782A")+sb("רווח שלך","\u20AA"+(e.cr||0),"חודשי","#5ABFA0");}
-    else{h+=sb("הכנסת שירותים","\u20AA"+td2.gross,"היום",e.color)+sb("שכר עובד","\u20AA"+td2.es,"היום",e.color)+sb("סה\"כ חודש","\u20AA"+mo.gross,"לך: \u20AA"+oMon,"#5ABFA0")+sb("ביטולים",tc,"","#E06060");}
+    if(isC){h+=sb("שכירת כיסא",formatMoney(e.cr),"חודשי","#E8782A")+sb("רווח שלך",formatMoney(e.cr),"חודשי","#5ABFA0");}
+    else{h+=sb("הכנסת שירותים",formatMoney(td2.gross),"היום",e.color)+sb("שכר עובד",formatMoney(td2.es),"היום",e.color)+sb("סה\"כ חודש",formatMoney(mo.gross),"לך: "+formatMoney(oMon),"#5ABFA0")+sb("ביטולים",tc,"","#E06060");}
     h+="</div><div style='display:flex;gap:8px'>";
     h+="<button onclick='openEditModal("+e.id+")' style='flex:1;height:38px;border-radius:10px;background:#1E1E1E;border:1px solid #2A2A2A;color:#888;font-size:12px'>הגדרות</button>";
     if(!isC){
@@ -461,25 +466,25 @@ function rEmps(){
 
 function rReport(){
   var mt=0,om=0;
-  (S.emps||[]).forEach(function(e){var all=Object.values((S.entries&&S.entries[e.id])||{}),r=calc(all,e);mt+=r.gross;om+=r.os;if(e.pm==="chair"||e.pm==="chair_pct")om+=(e.cr||0);});
+  (S.emps||[]).forEach(function(e){var all=Object.values((S.entries&&S.entries[e.id])||{}),r=calc(all,e);mt+=n(r.gross);om+=n(r.os);if(e.pm==="chair"||e.pm==="chair_pct")om+=n(e.cr);});
   var ownerAll=Object.values(S.ownerEntries||{});
-  var ownerMonth=ownerAll.reduce(function(s,e){return s+e.total;},0);
+  var ownerMonth=Math.round(ownerAll.reduce(function(s,e){return s+n(e.total);},0)*100)/100;
   mt+=ownerMonth; om+=ownerMonth;
   var goal=S.goal||0,pct=goal>0?Math.min(100,Math.round(mt/goal*100)):0;
   var gH=goal>0?"<div class=card><div style='display:flex;justify-content:space-between;margin-bottom:6px'><div style='font-size:14px;font-weight:700'>יעד חודשי</div><div style='color:#E8782A;font-weight:800'>"+pct+"%</div></div><div class=pw><div class=pbr style='width:"+pct+"%'></div></div><div style='font-size:11px;color:#555;margin-top:5px'>נשאר \u20AA"+Math.max(0,goal-mt)+"</div></div>":"";
   var ym=new Date().toISOString().slice(0,7),days={};
-  (S.emps||[]).forEach(function(e){Object.entries((S.entries&&S.entries[e.id])||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+p[1].total;});});
-  Object.entries(S.ownerEntries||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+p[1].total;});
+  (S.emps||[]).forEach(function(e){Object.entries((S.entries&&S.entries[e.id])||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+n(p[1].total);});});
+  Object.entries(S.ownerEntries||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+n(p[1].total);});
   var dks=Object.keys(days).sort(),mx=Math.max.apply(null,dks.map(function(k){return days[k];}).concat([1]));
   var cH="";
   if(dks.length){cH="<div class=cw3><div style='font-size:11px;color:#888;margin-bottom:8px;font-weight:700'>הכנסות יומיות</div><div class=cb2>";dks.forEach(function(k){cH+="<div class=bw><div class=bf style='height:"+Math.round(days[k]/mx*100)+"%'></div><div class=bl2>"+parseInt(k.slice(8))+"</div></div>";});cH+="</div></div>";}
   var mx2=Math.max.apply(null,(S.emps||[]).map(function(e){return n(calc(Object.values((S.entries&&S.entries[e.id])||{}),e).gross);}).concat([n(ownerMonth),1]));
   var cpH="<div class=card><div style='font-size:13px;font-weight:700;margin-bottom:12px'>השוואה</div>";
-  cpH+="<div class=cbr><div class=cnr><span>"+S.ownerName+"</span><span style='color:#E8782A'>\u20AA"+ownerMonth+"</span></div><div class=cbg><div class=cf style='width:"+Math.round(ownerMonth/mx2*100)+"%;background:#E8782A'></div></div></div>";
+  cpH+="<div class=cbr><div class=cnr><span>"+S.ownerName+"</span><span style='color:#E8782A'>"+formatMoney(ownerMonth)+"</span></div><div class=cbg><div class=cf style='width:"+Math.round(ownerMonth/mx2*100)+"%;background:#E8782A'></div></div></div>";
   (S.emps||[]).forEach(function(e){var r=calc(Object.values((S.entries&&S.entries[e.id])||{}),e),p=Math.round(r.gross/mx2*100);cpH+="<div class=cbr><div class=cnr><span>"+e.name+"</span><span style='color:"+e.color+"'>\u20AA"+r.gross+"</span></div><div class=cbg><div class=cf style='width:"+p+"%;background:"+e.color+"'></div></div></div>";});
   cpH+="</div>";
   var mn=new Date().toLocaleDateString("he-IL",{month:"long",year:"numeric"});
-  document.getElementById("t-report").innerHTML="<div class=card><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px'><div><div style='font-size:14px;font-weight:700'>סיכום חודש</div><div style='font-size:11px;color:#555'>"+mn+"</div></div><button onclick='openM(\"m-goal\")' style='background:#1E1E1E;border:1px solid #E8782A;color:#E8782A;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700'>יעד</button></div><div class=stats>"+sb("סה\"כ","\u20AA"+mt,"","#E8782A")+sb("רווח שלך","\u20AA"+om,"","#5ABFA0")+"</div></div>"+gH+cH+cpH;
+  document.getElementById("t-report").innerHTML="<div class=card><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px'><div><div style='font-size:14px;font-weight:700'>סיכום חודש</div><div style='font-size:11px;color:#555'>"+mn+"</div></div><button onclick='openM(\"m-goal\")' style='background:#1E1E1E;border:1px solid #E8782A;color:#E8782A;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700'>יעד</button></div><div class=stats>"+sb("סה\"כ",formatMoney(mt),"","#E8782A")+sb("רווח שלך",formatMoney(om),"","#5ABFA0")+"</div></div>"+gH+cH+cpH;
 }
 
 function rSvcs(){
@@ -546,14 +551,14 @@ function updOETot(){
   var cnt=0,amt=0;
   (S.svcs||[]).forEach(function(s){cnt+=n(oeCtr[s.id]);amt+=n(oeCtr[s.id])*n(s.price);});
   document.getElementById("oe-tcnt").textContent=cnt;
-  document.getElementById("oe-tamt").textContent="\u20AA"+amt;
+  document.getElementById("oe-tamt").textContent=formatMoney(amt);
   /* כפתור שמור תמיד פעיל כשהחלון פתוח */
   var b=document.getElementById("oe-save");b.disabled=false;b.style.opacity="1";
 }
 function saveOwnerEntry(){
   var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:n(oeCtr[s.id]),price:n(s.price)};});
   var ts=svcs.reduce(function(s,x){return s+n(x.cnt);},0);
-  var tot=svcs.reduce(function(s,x){return s+n(x.cnt)*n(x.price);},0);
+  var tot=Math.round(svcs.reduce(function(s,x){return s+n(x.cnt)*n(x.price);},0)*100)/100;
   if(!S.ownerEntries) S.ownerEntries={};
   S.ownerEntries[td()]={date:td(),svcs:svcs,totalSvcs:n(ts),total:n(tot)};
   sv(); closeM("m-owner-entry"); rOwner();
@@ -570,9 +575,9 @@ function rEmp(){
   var ee=(S.entries&&S.entries[e.id])||{},te=ee[td()],all=Object.values(ee),t2=calc(te?[te]:[],e),mo=calc(all,e);
   var tc=te?(te.cancels||0):0,tca=all.reduce(function(s,x){return s+(x.cancels||0);},0),avg=all.length?Math.round(mo.es/all.length):0;
   document.getElementById("emp-stats").innerHTML=
-    sb("השתכרת היום","\u20AA"+Math.round(t2.es),"","#E8782A")+
-    sb("סה\"כ החודש","\u20AA"+Math.round(mo.es),all.length+" ימים","#5ABFA0")+
-    sb("ממוצע / יום","\u20AA"+avg,"","#E8782A")+
+    sb("השתכרת היום",formatMoney(t2.es),"","#E8782A")+
+    sb("סה\"כ החודש",formatMoney(mo.es),all.length+" ימים","#5ABFA0")+
+    sb("ממוצע / יום",formatMoney(avg),"","#E8782A")+
     sb("ביטולים",tc,"סה\"כ: "+tca,"#E06060");
   var act=document.getElementById("emp-act");
   act.className="ab "+(te?"done":"pend");
@@ -627,15 +632,15 @@ function updTot(){
   document.getElementById("e-tcnt").textContent=cnt;
   document.getElementById("e-tcan").textContent=eCan;
   document.getElementById("e-ttip").textContent=eTip;
-  document.getElementById("e-tamt").textContent="\u20AA"+amt;
-  var hr=document.getElementById("e-hpay");if(hr)hr.textContent="\u20AA"+hp;
+  document.getElementById("e-tamt").textContent=formatMoney(amt);
+  var hr=document.getElementById("e-hpay");if(hr)hr.textContent=formatMoney(hp);
   /* כפתור שמור תמיד פעיל כשהחלון פתוח */
   var b=document.getElementById("e-save");b.disabled=false;b.style.opacity="1";
 }
 function saveEntry(){
   var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:n(eCtr[s.id]),price:n(s.price)};});
   var ts=svcs.reduce(function(s,x){return s+n(x.cnt);},0);
-  var tot=svcs.reduce(function(s,x){return s+n(x.cnt)*n(x.price);},0);
+  var tot=Math.round(svcs.reduce(function(s,x){return s+n(x.cnt)*n(x.price);},0)*100)/100;
   if(!S.entries) S.entries={};
   if(!S.entries[eEid]) S.entries[eEid]={};
   S.entries[eEid][td()]={date:td(),svcs:svcs,totalSvcs:n(ts),total:n(tot),cancels:n(eCan),tip:n(eTip),hrs:n(eHrs)};
@@ -743,7 +748,7 @@ function saveSvc() {
   errEl.textContent = "";
   if(edSvc) {
     var s = (S.svcs||[]).find(function(x){ return x.id === edSvc; });
-    if(s) { s.lbl = n; s.price = Number(pr); }
+    if(s) { s.lbl = svcName; s.price = n(pr); }
   } else {
     (S.svcs=S.svcs||[]).push({ id: "s" + Date.now(), lbl: svcName, price: n(pr) });
   }
