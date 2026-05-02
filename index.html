@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<link rel="stylesheet" href="style.css?v=1.0.2">
+<link rel="stylesheet" href="style.css?v=1.0.3">
 </head>
 <body>
 
@@ -183,12 +183,14 @@
     <button class="tab on" id="tbt" onclick="owTab('today')">היום</button>
     <button class="tab off" id="tbe" onclick="owTab('emps')">עובדים</button>
     <button class="tab off" id="tbr" onclick="owTab('report')">דוח</button>
+    <button class="tab off" id="tbh" onclick="owTab('history')">היסטוריה</button>
     <button class="tab off" id="tbs" onclick="owTab('svcs')">הגדרות</button>
   </div>
   <div class="sc">
     <div id="t-today"></div>
     <div id="t-emps" style="display:none"></div>
     <div id="t-report" style="display:none"></div>
+    <div id="t-history" style="display:none"></div>
     <div id="t-svcs" style="display:none"></div>
   </div>
 </div>
@@ -300,6 +302,7 @@
     <div id="ed-spct"></div>
   </div>
   <button onclick="saveEdit()" class="bg" style="width:100%;height:52px;font-size:16px;border-radius:14px">שמור</button>
+  <button onclick="deleteEmp(edId)" style="width:100%;height:44px;border-radius:12px;background:#2a1010;border:1px solid #E06060;color:#E06060;font-size:14px;font-weight:700;margin-top:10px">&#x1F5D1; מחק עובד</button>
 </div>
 </div>
 
@@ -337,6 +340,6 @@
 </div>
 </div>
 
-<script src="app.js?v=1.0.2"></script>
+<script src="app.js?v=1.0.3"></script>
 </body>
 </html>

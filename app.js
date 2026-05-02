@@ -396,10 +396,11 @@ function rOwner(){
 
 function owTab(t){
   owT=t;
-  ["today","emps","report","svcs"].forEach(function(x){document.getElementById("t-"+x).style.display=x===t?"":"none";});
+  ["today","emps","report","history","svcs"].forEach(function(x){document.getElementById("t-"+x).style.display=x===t?"":"none";});
   document.getElementById("tbt").className="tab "+(t==="today"?"on":"off");
   document.getElementById("tbe").className="tab "+(t==="emps"?"on":"off");
   document.getElementById("tbr").className="tab "+(t==="report"?"on":"off");
+  document.getElementById("tbh").className="tab "+(t==="history"?"on":"off");
   document.getElementById("tbs").className="tab "+(t==="svcs"?"on":"off");
   rOwTab(t);
 }
@@ -407,6 +408,7 @@ function rOwTab(t){
   if(t==="today")rToday();
   else if(t==="emps")rEmps();
   else if(t==="report")rReport();
+  else if(t==="history")rHistory();
   else if(t==="svcs")rSvcs();
 }
 
@@ -593,6 +595,133 @@ function rEmp(){
   document.getElementById("emp-hist").innerHTML=hist;
 }
 
+
+/* ── HISTORY REPORT ── */
+var histMonth = new Date().toISOString().slice(0,7);
+var histFilter = "all";
+var histSort = "desc";
+
+function rHistory(){
+  var allMonths = {};
+  (S.emps||[]).forEach(function(e){
+    Object.keys((S.entries&&S.entries[e.id])||{}).forEach(function(d){ allMonths[d.slice(0,7)]=1; });
+  });
+  Object.keys(S.ownerEntries||{}).forEach(function(d){ allMonths[d.slice(0,7)]=1; });
+  var months = Object.keys(allMonths).sort().reverse();
+  if(!months.length){ document.getElementById("t-history").innerHTML="<div style='text-align:center;padding:40px 0;color:#444'>אין נתונים עדיין</div>"; return; }
+  if(months.indexOf(histMonth)===-1) histMonth=months[0];
+
+  var empOpts="<option value='all'>כל העובדים</option>";
+  (S.emps||[]).forEach(function(e){ empOpts+="<option value='"+e.id+"'>"+e.name+"</option>"; });
+  empOpts+="<option value='owner'>"+S.ownerName+"</option>";
+
+  var monthOpts=months.map(function(m){
+    var d=new Date(m+"-01");
+    var lbl=d.toLocaleDateString("he-IL",{month:"long",year:"numeric"});
+    return "<option value='"+m+"'"+(m===histMonth?" selected":"")+">"+lbl+"</option>";
+  }).join("");
+
+  var h="<div class=card style='margin-bottom:12px'>";
+  h+="<div style='display:flex;gap:8px;flex-wrap:wrap;align-items:center'>";
+  h+="<select id='hist-month' onchange='histMonth=this.value;rHistory()' style='flex:1;height:40px;background:#1e1e1e;border:1px solid #3a3a3a;border-radius:8px;color:#f0f0f0;font-size:13px;padding:0 8px'>"+monthOpts+"</select>";
+  h+="<select id='hist-filter' onchange='histFilter=this.value;rHistory()' style='flex:1;height:40px;background:#1e1e1e;border:1px solid #3a3a3a;border-radius:8px;color:#f0f0f0;font-size:13px;padding:0 8px'>"+empOpts+"</select>";
+  h+="<button onclick='histSort=(histSort==="desc"?"asc":"desc");rHistory()' style='height:40px;padding:0 12px;background:#1e1e1e;border:1px solid #3a3a3a;border-radius:8px;color:#888;font-size:12px'>"+(histSort==="desc"?"↑ ישן→חדש":"↓ חדש→ישן")+"</button>";
+  h+="</div></div>";
+
+  /* collect all days in month */
+  var days={};
+  (S.emps||[]).forEach(function(e){
+    Object.entries((S.entries&&S.entries[e.id])||{}).forEach(function(p){
+      if(p[0].startsWith(histMonth)){
+        if(!days[p[0]])days[p[0]]={};
+        days[p[0]][e.id]={entry:p[1],emp:e};
+      }
+    });
+  });
+  Object.entries(S.ownerEntries||{}).forEach(function(p){
+    if(p[0].startsWith(histMonth)){
+      if(!days[p[0]])days[p[0]]={};
+      days[p[0]]["owner"]={entry:p[1],emp:{id:"owner",name:S.ownerName,color:"#E8782A",pm:"percent",pct:100,sp:{}}};
+    }
+  });
+
+  var sortedDays=Object.keys(days).sort(function(a,b){ return histSort==="desc"?b.localeCompare(a):a.localeCompare(b); });
+
+  /* monthly totals */
+  var mTotal=0,mSalary=0,mOwner=0,mCancel=0;
+  sortedDays.forEach(function(d){
+    Object.values(days[d]).forEach(function(row){
+      if(row.emp.id==="owner"){
+        mTotal+=n(row.entry.total); mOwner+=n(row.entry.total);
+      } else {
+        var r=calc([row.entry],row.emp);
+        mTotal+=n(r.gross); mSalary+=n(r.es); mOwner+=n(r.os);
+        mCancel+=n(row.entry.cancels);
+        if(row.emp.pm==="chair"||row.emp.pm==="chair_pct") mOwner+=n(row.emp.cr);
+      }
+    });
+  });
+
+  h+="<div class=card style='border-color:rgba(232,120,42,.3)'>";
+  h+="<div style='font-size:13px;font-weight:700;margin-bottom:10px;color:#E8782A'>סיכום חודשי</div>";
+  h+="<div class=stats>"+sb("סה"כ הכנסות",formatMoney(mTotal),"","#E8782A")+sb("שכר עובדים",formatMoney(mSalary),"","#8A8AE8")+sb("רווח שלך",formatMoney(mOwner),"","#5ABFA0")+sb("ביטולים",mCancel,"","#E06060")+"</div></div>";
+
+  /* daily breakdown */
+  if(!sortedDays.length){
+    h+="<div style='text-align:center;padding:30px 0;color:#444'>אין נתונים לחודש זה</div>";
+    document.getElementById("t-history").innerHTML=h; return;
+  }
+
+  sortedDays.forEach(function(d){
+    var dateObj=new Date(d);
+    var dateLbl=dateObj.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"});
+    var dayTotal=0,daySalary=0,dayOwner=0,dayCancel=0;
+    var rows=Object.values(days[d]).filter(function(row){
+      if(histFilter==="all") return true;
+      if(histFilter==="owner") return row.emp.id==="owner";
+      return String(row.emp.id)===String(histFilter);
+    });
+    if(!rows.length) return;
+
+    h+="<div class=card><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px'>";
+    h+="<div style='font-size:13px;font-weight:800;color:#E8782A'>"+dateLbl+"</div></div>";
+
+    rows.forEach(function(row){
+      var empName=row.emp.name, empColor=row.emp.color||"#E8782A";
+      var sm=(row.entry.svcs||[]).filter(function(s){return n(s.cnt)>0;}).map(function(s){return s.lbl+" x"+s.cnt;}).join(" | ")||"---";
+      var gross=0,sal=0,ownerShare=0;
+      if(row.emp.id==="owner"){
+        gross=n(row.entry.total); ownerShare=gross;
+      } else {
+        var r=calc([row.entry],row.emp);
+        gross=n(r.gross); sal=n(r.es); ownerShare=n(r.os);
+        if(row.emp.pm==="chair"||row.emp.pm==="chair_pct") ownerShare+=n(row.emp.cr);
+      }
+      dayTotal+=gross; daySalary+=sal; dayOwner+=ownerShare;
+      dayCancel+=n(row.entry.cancels);
+
+      h+="<div style='display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #1e1e1e'>";
+      h+="<div style='display:flex;align-items:center;gap:8px'>";
+      h+="<div class=av style='width:32px;height:32px;background:"+empColor+"22;border:2px solid "+empColor+";font-size:10px;color:"+empColor+"'>"+ini(empName)+"</div>";
+      h+="<div><div style='font-weight:700;font-size:13px'>"+empName+"</div><div style='color:#555;font-size:11px'>"+sm+"</div></div></div>";
+      h+="<div style='text-align:left'>";
+      if(row.emp.id!=="owner"){
+        h+="<div style='font-size:12px;color:#8A8AE8'>שכר: "+formatMoney(sal)+"</div>";
+        h+="<div style='font-size:12px;color:#5ABFA0'>שלך: "+formatMoney(ownerShare)+"</div>";
+      }
+      h+="<div style='font-size:13px;font-weight:800;color:#E8782A'>"+formatMoney(gross)+"</div>";
+      if(n(row.entry.cancels)>0) h+="<div style='font-size:11px;color:#E06060'>ביטולים: "+row.entry.cancels+"</div>";
+      h+="</div></div>";
+    });
+
+    h+="<div style='display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid #2a2a2a'>";
+    h+="<span style='font-size:12px;color:#555'>סה"כ יום</span>";
+    h+="<span style='font-size:13px;font-weight:800;color:#E8782A'>"+formatMoney(dayTotal)+"</span></div></div>";
+  });
+
+  document.getElementById("t-history").innerHTML=h;
+}
+
 /* ── ENTRY MODAL ── */
 function openEntry(eid){
   eEid=eid>0?eid:(ses.role==="emp"?ses.eid:null);if(!eEid)return;
@@ -691,6 +820,23 @@ function saveEdit(){
   var ec=document.getElementById("ef-cr");if(ec)e.cr=n(parseInt(ec.value));
   e.sp=e.sp||{};(S.svcs||[]).forEach(function(s){var el=document.getElementById("sp-"+s.id);if(el)e.sp[s.id]=n(parseInt(el.value));});
   sv(); closeM("m-edit"); rOwner();
+}
+
+function deleteEmp(id) {
+  var e = (S.emps||[]).find(function(x){ return x.id===id; });
+  if(!e) { alert("שגיאה: עובד לא נמצא"); return; }
+  if(!id && id!==0) { alert("שגיאה: מזהה עובד חסר"); return; }
+  var confirmed = confirm("האם אתה בטוח שברצונך למחוק את " + e.name + "?
+
+הדיווחים ההיסטוריים שלו יישמרו.");
+  if(!confirmed) return;
+  /* מסיר מהרשימה — הנתונים ב-entries נשמרים */
+  S.emps = (S.emps||[]).filter(function(x){ return x.id!==id; });
+  sv();
+  /* מחיקה מ-Firebase (רק את העובד, לא entries) */
+  db.ref("businesses/"+bizCode+"/data/emps").set(S.emps).catch(function(e){ console.error("deleteEmp Firebase error:",e); });
+  closeM("m-edit");
+  rOwner();
 }
 
 /* ── ADD EMP ── */
