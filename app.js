@@ -232,30 +232,42 @@ function pk(n){if(pin.length<4){pin+=n;rdots();}}
 function pdel(){pin=pin.slice(0,-1);rdots();}
 
 function doLogin(){
+  var inputCode = pin.replace(/\s/g,"");
   var correct;
+  var emp;
+
   if(lSel==="owner"){
-    /* בעל עסק מזין ownerPassword בלבד */
-    correct = S.ownerPassword;
+    /* בעל עסק — בדוק ownerPassword בלבד */
+    if(!S||!S.ownerPassword){
+      document.getElementById("pin-err").textContent="שגיאה: ownerPassword חסר, נסה להתחבר מחדש";
+      pin=""; rdots(); return;
+    }
+    correct = (S.ownerPassword||"").replace(/\s/g,"");
+    console.log("[DOLOGIN] user: owner | inputCode.length:", inputCode.length, "| ownerPassword.length:", correct.length);
   } else {
-    var emp=S.emps.find(function(e){return e.id===lSel;});
+    emp = S.emps.find(function(e){ return e.id===lSel; });
     if(!emp){ document.getElementById("pin-err").textContent="בחר עובד"; return; }
-    correct = emp.pin;
+    if(!emp.pin){
+      document.getElementById("pin-err").textContent="שגיאה: קוד עובד חסר";
+      pin=""; rdots(); return;
+    }
+    correct = (emp.pin||"").replace(/\s/g,"");
+    console.log("[DOLOGIN] user: emp("+emp.name+") | inputCode.length:", inputCode.length, "| pin.length:", correct.length);
   }
 
-  if(pin===correct){
+  if(inputCode === correct){
     pin="";
     if(lSel==="owner"){
       ses={role:"owner"};
       rOwner(); showPg("pg-owner");
     } else {
-      var emp2=S.emps.find(function(e){return e.id===lSel;});
       ses={role:"emp",eid:lSel};
-      if(emp2.pm==="chair"){
+      if(emp.pm==="chair"){
         var av=document.getElementById("chair-av");
-        av.textContent=emp2.av; av.style.background=emp2.color+"22";
-        av.style.border="2px solid "+emp2.color; av.style.color=emp2.color;
-        document.getElementById("chair-name").textContent=emp2.name;
-        document.getElementById("chair-rent").textContent="\u20AA"+(emp2.cr||0);
+        av.textContent=emp.av; av.style.background=emp.color+"22";
+        av.style.border="2px solid "+emp.color; av.style.color=emp.color;
+        document.getElementById("chair-name").textContent=emp.name;
+        document.getElementById("chair-rent").textContent="\u20AA"+(emp.cr||0);
         showPg("pg-chair");
       } else { rEmp(); showPg("pg-emp"); }
     }
@@ -690,14 +702,20 @@ function saveGoal(){ S.goal=parseInt(document.getElementById("goal-v").value)||0
   /* Auto-login if saved */
   var saved = localStorage.getItem("crewos_biz");
   if(saved){
-    try{ var c=localStorage.getItem("crewos_cache_"+saved); if(c)S=JSON.parse(c); }catch(e){}
-    db.ref("businesses/"+saved+"/data").once("value").then(function(snap){
-      var data=snap.val();
-      if(data){ S=data; bizCode=saved; try{localStorage.setItem("crewos_cache_"+saved,JSON.stringify(S));}catch(e){} }
+    try{ var c=localStorage.getItem("crewos_cache_"+saved); if(c){ S=JSON.parse(c); bizCode=saved; } }catch(e){}
+    db.ref("businesses/"+saved).once("value").then(function(snap){
+      var biz=snap.val();
+      if(biz&&biz.data){
+        S=biz.data; bizCode=saved;
+        try{localStorage.setItem("crewos_cache_"+saved,JSON.stringify(S));}catch(e){}
+      }
       if(S&&bizCode){
+        console.log("[AUTO-LOGIN] loaded biz:", bizCode,
+          "ownerPassword.length:", (S.ownerPassword||"").length,
+          "sitePassword.length:", (S.sitePassword||"").length);
         document.getElementById("biz-name-display").textContent=S.bizName||"המספרה";
         lSel="owner"; pin=""; renderLogin(); showPg("pg-login");
       }
-    }).catch(function(){});
+    }).catch(function(e){ console.error("[AUTO-LOGIN ERROR]", e); });
   }
 })();
