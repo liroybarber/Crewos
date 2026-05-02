@@ -41,6 +41,7 @@ function gsp(emp,sid) { if(emp.sp&&emp.sp[sid]!=null)return emp.sp[sid]; return 
 
 function sv() {
   if(!bizCode||!S) return;
+  ensureS(S);
   try{localStorage.setItem("crewos_cache_"+bizCode, JSON.stringify(S));}catch(e){}
   if(syncTimeout) clearTimeout(syncTimeout);
   syncTimeout = setTimeout(function(){
@@ -56,8 +57,8 @@ function defS(bizName, ownerName, sitePassword, ownerPassword, phone) {
   return {
     bizName: bizName||"המספרה שלי",
     ownerName: ownerName||"בעל העסק",
-    sitePassword: sitePassword,
-    ownerPassword: ownerPassword,
+    sitePassword: sitePassword||"",
+    ownerPassword: ownerPassword||"",
     phone: phone||"",
     nid: 3, goal: 0,
     svcs: [{id:"s1",lbl:"תספורת",price:60},{id:"s2",lbl:"זקן",price:40},{id:"s3",lbl:"שניהם",price:90}],
@@ -65,6 +66,25 @@ function defS(bizName, ownerName, sitePassword, ownerPassword, phone) {
     ownerEntries: {},
     entries: {}
   };
+}
+
+/* מבטיח שכל שדות S קיימים — מונע שגיאות forEach */
+function ensureS(data) {
+  if(!data) return defS();
+  data.emps = data.emps || [];
+  data.svcs = data.svcs || [{id:"s1",lbl:"תספורת",price:60},{id:"s2",lbl:"זקן",price:40},{id:"s3",lbl:"שניהם",price:90}];
+  data.ownerEntries = data.ownerEntries || {};
+  data.entries = data.entries || {};
+  data.nid = data.nid || 3;
+  data.goal = data.goal || 0;
+  /* תמיכה בשדות ישנים */
+  if(!data.ownerPassword && (data.ownerPin||data.accessPass||data.ownerPass)) {
+    data.ownerPassword = data.ownerPin || data.accessPass || data.ownerPass;
+  }
+  if(!data.sitePassword && (data.sitePin||data.accessPass)) {
+    data.sitePassword = data.sitePin || data.accessPass;
+  }
+  return data;
 }
 
 /* ── REGISTRATION ── */
@@ -232,7 +252,7 @@ async function siteLogin() {
 function renderLogin() {
   if(!S) return;
   var h="";
-  S.emps.forEach(function(e){
+  (S.emps||[]).forEach(function(e){
     var sel=lSel===e.id;
     h+="<div class=eo id='lo-"+e.id+"' onclick='selUser("+e.id+")' style='border-color:"+(sel?e.color:"#222")+";background:"+(sel?e.color+"22":"#161616")+"'>";
     h+="<div class=av style='width:40px;height:40px;background:"+e.color+"22;border:2px solid "+e.color+";font-size:13px;color:"+e.color+"'>"+e.av+"</div>";
@@ -251,7 +271,7 @@ function selUser(id){
   var oel=document.getElementById("lo-owner");
   oel.style.borderColor=id==="owner"?"var(--or)":"#222";
   oel.style.background=id==="owner"?"rgba(232,120,42,.1)":"#161616";
-  S.emps.forEach(function(e){
+  (S.emps||[]).forEach(function(e){
     var el=document.getElementById("lo-"+e.id); if(!el)return;
     el.style.borderColor=id===e.id?e.color:"#222";
     el.style.background=id===e.id?e.color+"22":"#161616";
@@ -263,7 +283,7 @@ function selUser(id){
 function updHint(){
   var h=document.getElementById("login-hint");
   if(lSel==="owner") h.textContent="סיסמת בעל העסק";
-  else{ var e=S.emps.find(function(x){return x.id===lSel;}); h.textContent=e?"קוד "+e.name:"בחר מישהו"; }
+  else{ var e=(S.emps||[]).find(function(x){return x.id===lSel;}); h.textContent=e?"קוד "+e.name:"בחר מישהו"; }
 }
 function rdots(){
   for(var i=0;i<4;i++) document.getElementById("d"+i).className="dt"+(pin.length>i?" on":"");
@@ -292,7 +312,7 @@ function doLogin(){
       pin=""; rdots(); return;
     }
   } else {
-    emp = S.emps.find(function(e){ return e.id===lSel; });
+    emp = (S.emps||[]).find(function(e){ return e.id===lSel; });
     if(!emp){ document.getElementById("pin-err").textContent="בחר עובד"; return; }
     correct = (emp.pin||"").replace(/\s/g,"");
     console.log("[DOLOGIN] emp:", emp.name, "| inputCode.length:", inputCode.length, "| pin.length:", correct.length, "| match:", correct === inputCode);
@@ -348,8 +368,8 @@ function calc(list,emp){
 function rOwner(){
   document.getElementById("ow-date").textContent=S.bizName+" - "+new Date().toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"});
   var tt=0,mt=0,om=0,tc=0;
-  S.emps.forEach(function(e){
-    var all=Object.values(S.entries[e.id]||{}),te=(S.entries[e.id]||{})[td()],r=calc(all,e);
+  (S.emps||[]).forEach(function(e){
+    var all=Object.values((S.entries&&S.entries[e.id])||{}),te=((S.entries&&S.entries[e.id])||{})[td()],r=calc(all,e);
     if(te){tt+=te.total;tc+=(te.cancels||0);}
     mt+=r.gross; om+=r.os;
     if(e.pm==="chair"||e.pm==="chair_pct") om+=(e.cr||0);
@@ -394,8 +414,8 @@ function rToday(){
   h+="<div><div style='font-weight:700;font-size:14px'>"+S.ownerName+"</div><div style='color:#555;font-size:11px'>"+ownerSm+"</div></div></div>";
   h+="<div style='text-align:left'><div style='color:#E8782A;font-weight:800;font-size:17px'>\u20AA"+ownerGross+"</div><div style='color:#5ABFA0;font-size:11px'>הכנסה שלך</div></div></div>";
   h+="<button onclick='openOwnerEntry()' style='width:100%;height:36px;border-radius:10px;margin-top:10px;background:"+(ownerTe?"#2a2a1a":"#E8782A22")+";border:1px solid "+(ownerTe?"#444":"#E8782A")+";color:"+(ownerTe?"#888":"#E8782A")+";font-size:13px;font-weight:700'>"+(ownerTe?"עדכן יום שלי":"הזן יום שלי")+"</button></div>";
-  S.emps.forEach(function(e){
-    var te=(S.entries[e.id]||{})[td()],r=calc(te?[te]:[],e);
+  (S.emps||[]).forEach(function(e){
+    var te=((S.entries&&S.entries[e.id])||{})[td()],r=calc(te?[te]:[],e);
     var c2=te?(te.cancels||0):0,tip=te?(te.tip||0):0;
     var sm=te?(te.svcs||[]).filter(function(s){return s.cnt>0;}).map(function(s){return s.lbl+": "+s.cnt;}).join(" | "):"---";
     h+="<div class=card><div style='display:flex;align-items:center;justify-content:space-between'>";
@@ -409,8 +429,8 @@ function rToday(){
 
 function rEmps(){
   var h="";
-  S.emps.forEach(function(e){
-    var ee=S.entries[e.id]||{},te=ee[td()],all=Object.values(ee);
+  (S.emps||[]).forEach(function(e){
+    var ee=(S.entries&&S.entries[e.id])||{},te=ee[td()],all=Object.values(ee);
     var td2=calc(te?[te]:[],e),mo=calc(all,e),hasT=!!te;
     var ml=(MDL.find(function(m){return m.id===e.pm;})||{lbl:""}).lbl;
     var tc=all.reduce(function(s,x){return s+(x.cancels||0);},0);
@@ -439,22 +459,22 @@ function rEmps(){
 
 function rReport(){
   var mt=0,om=0;
-  S.emps.forEach(function(e){var all=Object.values(S.entries[e.id]||{}),r=calc(all,e);mt+=r.gross;om+=r.os;if(e.pm==="chair"||e.pm==="chair_pct")om+=(e.cr||0);});
+  (S.emps||[]).forEach(function(e){var all=Object.values((S.entries&&S.entries[e.id])||{}),r=calc(all,e);mt+=r.gross;om+=r.os;if(e.pm==="chair"||e.pm==="chair_pct")om+=(e.cr||0);});
   var ownerAll=Object.values(S.ownerEntries||{});
   var ownerMonth=ownerAll.reduce(function(s,e){return s+e.total;},0);
   mt+=ownerMonth; om+=ownerMonth;
   var goal=S.goal||0,pct=goal>0?Math.min(100,Math.round(mt/goal*100)):0;
   var gH=goal>0?"<div class=card><div style='display:flex;justify-content:space-between;margin-bottom:6px'><div style='font-size:14px;font-weight:700'>יעד חודשי</div><div style='color:#E8782A;font-weight:800'>"+pct+"%</div></div><div class=pw><div class=pbr style='width:"+pct+"%'></div></div><div style='font-size:11px;color:#555;margin-top:5px'>נשאר \u20AA"+Math.max(0,goal-mt)+"</div></div>":"";
   var ym=new Date().toISOString().slice(0,7),days={};
-  S.emps.forEach(function(e){Object.entries(S.entries[e.id]||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+p[1].total;});});
+  (S.emps||[]).forEach(function(e){Object.entries((S.entries&&S.entries[e.id])||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+p[1].total;});});
   Object.entries(S.ownerEntries||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+p[1].total;});
   var dks=Object.keys(days).sort(),mx=Math.max.apply(null,dks.map(function(k){return days[k];}).concat([1]));
   var cH="";
   if(dks.length){cH="<div class=cw3><div style='font-size:11px;color:#888;margin-bottom:8px;font-weight:700'>הכנסות יומיות</div><div class=cb2>";dks.forEach(function(k){cH+="<div class=bw><div class=bf style='height:"+Math.round(days[k]/mx*100)+"%'></div><div class=bl2>"+parseInt(k.slice(8))+"</div></div>";});cH+="</div></div>";}
-  var mx2=Math.max.apply(null,S.emps.map(function(e){return calc(Object.values(S.entries[e.id]||{}),e).gross;}).concat([ownerMonth,1]));
+  var mx2=Math.max.apply(null,(S.emps||[]).map(function(e){return calc(Object.values((S.entries&&S.entries[e.id])||{}),e).gross;}).concat([ownerMonth,1]));
   var cpH="<div class=card><div style='font-size:13px;font-weight:700;margin-bottom:12px'>השוואה</div>";
   cpH+="<div class=cbr><div class=cnr><span>"+S.ownerName+"</span><span style='color:#E8782A'>\u20AA"+ownerMonth+"</span></div><div class=cbg><div class=cf style='width:"+Math.round(ownerMonth/mx2*100)+"%;background:#E8782A'></div></div></div>";
-  S.emps.forEach(function(e){var r=calc(Object.values(S.entries[e.id]||{}),e),p=Math.round(r.gross/mx2*100);cpH+="<div class=cbr><div class=cnr><span>"+e.name+"</span><span style='color:"+e.color+"'>\u20AA"+r.gross+"</span></div><div class=cbg><div class=cf style='width:"+p+"%;background:"+e.color+"'></div></div></div>";});
+  (S.emps||[]).forEach(function(e){var r=calc(Object.values((S.entries&&S.entries[e.id])||{}),e),p=Math.round(r.gross/mx2*100);cpH+="<div class=cbr><div class=cnr><span>"+e.name+"</span><span style='color:"+e.color+"'>\u20AA"+r.gross+"</span></div><div class=cbg><div class=cf style='width:"+p+"%;background:"+e.color+"'></div></div></div>";});
   cpH+="</div>";
   var mn=new Date().toLocaleDateString("he-IL",{month:"long",year:"numeric"});
   document.getElementById("t-report").innerHTML="<div class=card><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px'><div><div style='font-size:14px;font-weight:700'>סיכום חודש</div><div style='font-size:11px;color:#555'>"+mn+"</div></div><button onclick='openM(\"m-goal\")' style='background:#1E1E1E;border:1px solid #E8782A;color:#E8782A;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700'>יעד</button></div><div class=stats>"+sb("סה\"כ","\u20AA"+mt,"","#E8782A")+sb("רווח שלך","\u20AA"+om,"","#5ABFA0")+"</div></div>"+gH+cH+cpH;
@@ -462,7 +482,7 @@ function rReport(){
 
 function rSvcs(){
   var h="<div class=sl>שירותים ומחירים</div><div class=card>";
-  S.svcs.forEach(function(s){
+  (S.svcs||[]).forEach(function(s){
     h+="<div class=smr><div><div style='font-weight:700'>"+s.lbl+"</div><div style='color:#E8782A;font-size:12px'>\u20AA"+s.price+"</div></div>";
     h+="<div style='display:flex;gap:8px'><button class=ib style='background:#1a1a2a;color:#8a8ae8' onclick='openEditSvc(\""+s.id+"\")'>עריכה</button><button class=ib style='background:#2a1010;color:#E06060' onclick='delSvc(\""+s.id+"\")'>מחק</button></div></div>";
   });
@@ -507,13 +527,13 @@ function changeOwnerPass(){
 function openOwnerEntry(){
   var ex=(S.ownerEntries||{})[td()];
   oeCtr={};
-  S.svcs.forEach(function(s){oeCtr[s.id]=ex?((ex.svcs||[]).find(function(x){return x.id===s.id;})||{cnt:0}).cnt:0;});
+  (S.svcs||[]).forEach(function(s){oeCtr[s.id]=ex?((ex.svcs||[]).find(function(x){return x.id===s.id;})||{cnt:0}).cnt:0;});
   document.getElementById("oe-title").textContent="הזנת יום שלי - "+new Date().toLocaleDateString("he-IL");
   rOwnerEntrySvcs(); openM("m-owner-entry");
 }
 function rOwnerEntrySvcs(){
   var html="";
-  S.svcs.forEach(function(s){
+  (S.svcs||[]).forEach(function(s){
     html+="<div class=sr><div><div style='font-size:14px;font-weight:600'>"+s.lbl+"</div><div style='color:#555;font-size:11px'>\u20AA"+s.price+" / יחידה</div></div>";
     html+="<div class=cr><button class='cb m' onclick='adjOE(\""+s.id+"\",-1)'>-</button><span class=cv id='oecv-"+s.id+"'>"+(oeCtr[s.id]||0)+"</span><button class='cb p' onclick='adjOE(\""+s.id+"\",1)'>+</button></div></div>";
   });
@@ -522,13 +542,13 @@ function rOwnerEntrySvcs(){
 function adjOE(id,d){oeCtr[id]=Math.max(0,(oeCtr[id]||0)+d);document.getElementById("oecv-"+id).textContent=oeCtr[id];updOETot();}
 function updOETot(){
   var cnt=0,amt=0;
-  S.svcs.forEach(function(s){cnt+=oeCtr[s.id]||0;amt+=(oeCtr[s.id]||0)*s.price;});
+  (S.svcs||[]).forEach(function(s){cnt+=oeCtr[s.id]||0;amt+=(oeCtr[s.id]||0)*s.price;});
   document.getElementById("oe-tcnt").textContent=cnt;
   document.getElementById("oe-tamt").textContent="\u20AA"+amt;
   var b=document.getElementById("oe-save");b.disabled=cnt===0;b.style.opacity=cnt===0?".4":"1";
 }
 function saveOwnerEntry(){
-  var svcs=S.svcs.map(function(s){return{id:s.id,lbl:s.lbl,cnt:oeCtr[s.id]||0,price:s.price};});
+  var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:oeCtr[s.id]||0,price:s.price};});
   var ts=svcs.reduce(function(s,x){return s+x.cnt;},0),tot=svcs.reduce(function(s,x){return s+x.cnt*x.price;},0);
   if(!S.ownerEntries)S.ownerEntries={};
   S.ownerEntries[td()]={date:td(),svcs:svcs,totalSvcs:ts,total:tot};
@@ -537,13 +557,13 @@ function saveOwnerEntry(){
 
 /* ── EMPLOYEE ── */
 function rEmp(){
-  var e=S.emps.find(function(x){return x.id===ses.eid;});if(!e)return;
+  var e=(S.emps||[]).find(function(x){return x.id===ses.eid;});if(!e)return;
   var av=document.getElementById("emp-av");
   av.textContent=e.av;av.style.background=e.color+"22";av.style.border="2px solid "+e.color;av.style.color=e.color;
   document.getElementById("emp-name").textContent=e.name;
   var md=e.pm==="percent"?"אחוז לפי שירות":e.pm==="hourly"?(e.hr||0)+" \u20AA לשעה":e.pm==="chair_pct"?"כיסא + אחוזים":"שכירת כיסא";
   document.getElementById("emp-sub").textContent=e.role+" - "+md;
-  var ee=S.entries[e.id]||{},te=ee[td()],all=Object.values(ee),t2=calc(te?[te]:[],e),mo=calc(all,e);
+  var ee=(S.entries&&S.entries[e.id])||{},te=ee[td()],all=Object.values(ee),t2=calc(te?[te]:[],e),mo=calc(all,e);
   var tc=te?(te.cancels||0):0,tca=all.reduce(function(s,x){return s+(x.cancels||0);},0),avg=all.length?Math.round(mo.es/all.length):0;
   document.getElementById("emp-stats").innerHTML=
     sb("השתכרת היום","\u20AA"+Math.round(t2.es),"","#E8782A")+
@@ -567,10 +587,10 @@ function rEmp(){
 /* ── ENTRY MODAL ── */
 function openEntry(eid){
   eEid=eid>0?eid:(ses.role==="emp"?ses.eid:null);if(!eEid)return;
-  var e=S.emps.find(function(x){return x.id===eEid;});if(!e)return;
+  var e=(S.emps||[]).find(function(x){return x.id===eEid;});if(!e)return;
   var ex=(S.entries[eEid]||{})[td()];
   eCtr={};eCan=0;eTip=0;eHrs=0;
-  S.svcs.forEach(function(s){eCtr[s.id]=ex?((ex.svcs||[]).find(function(x){return x.id===s.id;})||{cnt:0}).cnt:0;});
+  (S.svcs||[]).forEach(function(s){eCtr[s.id]=ex?((ex.svcs||[]).find(function(x){return x.id===s.id;})||{cnt:0}).cnt:0;});
   if(ex){eCan=ex.cancels||0;eTip=ex.tip||0;eHrs=ex.hrs||0;}
   document.getElementById("et-title").textContent="סיכום יום - "+new Date().toLocaleDateString("he-IL");
   document.getElementById("et-sub").textContent=e.name;
@@ -585,7 +605,7 @@ function openEntry(eid){
 }
 function rEntrySvcs(){
   var html="";
-  S.svcs.forEach(function(s){
+  (S.svcs||[]).forEach(function(s){
     html+="<div class=sr><div><div style='font-size:14px;font-weight:600'>"+s.lbl+"</div><div style='color:#555;font-size:11px'>\u20AA"+s.price+" / יחידה</div></div>";
     html+="<div class=cr><button class='cb m' onclick='adjS(\""+s.id+"\",-1)'>-</button><span class=cv id='cv-"+s.id+"'>"+(eCtr[s.id]||0)+"</span><button class='cb p' onclick='adjS(\""+s.id+"\",1)'>+</button></div></div>";
   });
@@ -597,8 +617,8 @@ function adjT(d){eTip=Math.max(0,eTip+d);document.getElementById("e-tip").textCo
 function adjH(d){eHrs=Math.max(0,eHrs+d);var el=document.getElementById("e-hrs");if(el)el.textContent=eHrs;updTot();}
 function updTot(){
   var cnt=0,amt=0;
-  S.svcs.forEach(function(s){cnt+=eCtr[s.id]||0;amt+=(eCtr[s.id]||0)*s.price;});
-  var e=S.emps.find(function(x){return x.id===eEid;})||{};
+  (S.svcs||[]).forEach(function(s){cnt+=eCtr[s.id]||0;amt+=(eCtr[s.id]||0)*s.price;});
+  var e=(S.emps||[]).find(function(x){return x.id===eEid;})||{};
   var hp=e.pm==="hourly"?eHrs*(e.hr||0):0;
   document.getElementById("e-tcnt").textContent=cnt;
   document.getElementById("e-tcan").textContent=eCan;
@@ -609,7 +629,7 @@ function updTot(){
   var b=document.getElementById("e-save");b.disabled=!ok;b.style.opacity=ok?"1":".4";
 }
 function saveEntry(){
-  var svcs=S.svcs.map(function(s){return{id:s.id,lbl:s.lbl,cnt:eCtr[s.id]||0,price:s.price};});
+  var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:eCtr[s.id]||0,price:s.price};});
   var ts=svcs.reduce(function(s,x){return s+x.cnt;},0),tot=svcs.reduce(function(s,x){return s+x.cnt*x.price;},0);
   if(!S.entries[eEid])S.entries[eEid]={};
   S.entries[eEid][td()]={date:td(),svcs:svcs,totalSvcs:ts,total:tot,cancels:eCan,tip:eTip,hrs:eHrs};
@@ -618,14 +638,14 @@ function saveEntry(){
 
 /* ── EDIT EMP ── */
 function openEditModal(id){
-  edId=id;var e=S.emps.find(function(x){return x.id===id;});if(!e)return;
+  edId=id;var e=(S.emps||[]).find(function(x){return x.id===id;});if(!e)return;
   document.getElementById("ed-name").value=e.name;
   document.getElementById("ed-role").value=e.role;
   document.getElementById("ed-pin").value="";
   edM=e.pm; rEdMdl(); openM("m-edit");
 }
 function rEdMdl(){
-  var e=S.emps.find(function(x){return x.id===edId;})||{};
+  var e=(S.emps||[]).find(function(x){return x.id===edId;})||{};
   var h="";MDL.forEach(function(m){h+="<div class='mo"+(edM===m.id?" on":"")+"' onclick='setEdM(\""+m.id+"\")'><span style='font-size:14px'>"+m.lbl+"</span></div>";});
   document.getElementById("ed-models").innerHTML=h;
   var f="";
@@ -640,16 +660,16 @@ function rEdMdl(){
 }
 function setEdM(m){edM=m;rEdMdl();}
 function rEdSp(){
-  var e=S.emps.find(function(x){return x.id===edId;})||{sp:{}};
+  var e=(S.emps||[]).find(function(x){return x.id===edId;})||{sp:{}};
   var h="";
-  S.svcs.forEach(function(s){
+  (S.svcs||[]).forEach(function(s){
     var p=(e.sp&&e.sp[s.id]!=null)?e.sp[s.id]:(e.pct||50);
     h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:10px'><span style='font-size:13px'>"+s.lbl+"</span><div style='display:flex;align-items:center;gap:6px'><input type='number' id='sp-"+s.id+"' value='"+p+"' min='0' max='100' style='width:58px;height:36px;font-size:14px;padding:0;text-align:center'><span style='color:#555;font-size:13px'>%</span></div></div>";
   });
   document.getElementById("ed-spct").innerHTML=h;
 }
 function saveEdit(){
-  var e=S.emps.find(function(x){return x.id===edId;});if(!e)return;
+  var e=(S.emps||[]).find(function(x){return x.id===edId;});if(!e)return;
   e.name=document.getElementById("ed-name").value.trim()||e.name;
   e.role=document.getElementById("ed-role").value.trim()||e.role;
   e.av=ini(e.name);
@@ -658,7 +678,7 @@ function saveEdit(){
   var ep=document.getElementById("ef-pct");if(ep)e.pct=parseInt(ep.value)||50;
   var eh=document.getElementById("ef-hr");if(eh)e.hr=parseInt(eh.value)||0;
   var ec=document.getElementById("ef-cr");if(ec)e.cr=parseInt(ec.value)||0;
-  e.sp=e.sp||{};S.svcs.forEach(function(s){var el=document.getElementById("sp-"+s.id);if(el)e.sp[s.id]=parseInt(el.value)||0;});
+  e.sp=e.sp||{};(S.svcs||[]).forEach(function(s){var el=document.getElementById("sp-"+s.id);if(el)e.sp[s.id]=parseInt(el.value)||0;});
   sv(); closeM("m-edit"); rOwner();
 }
 
@@ -679,12 +699,12 @@ function saveAdd(){
   var name=document.getElementById("ad-name").value.trim();if(!name)return;
   var role=document.getElementById("ad-role").value.trim()||"ספר";
   var np=document.getElementById("ad-pin").value.trim();if(np.length!==4||isNaN(np))np="1234";
-  var c=COLS[S.emps.length%COLS.length];
+  var c=COLS[(S.emps||[]).length%COLS.length];
   var e={id:S.nid++,name:name,role:role,av:ini(name),pm:addM,pct:50,hr:0,cr:0,sp:{},color:c,pin:np};
   var ap=document.getElementById("af-pct");if(ap)e.pct=parseInt(ap.value)||50;
   var ah=document.getElementById("af-hr");if(ah)e.hr=parseInt(ah.value)||0;
   var ac=document.getElementById("af-cr");if(ac)e.cr=parseInt(ac.value)||0;
-  S.emps.push(e); sv(); closeM("m-add"); renderLogin(); rOwner();
+  (S.emps=S.emps||[]).push(e); sv(); closeM("m-add"); renderLogin(); rOwner();
 }
 
 /* ── SERVICES ── */
@@ -698,7 +718,7 @@ function openAddSvc() {
 }
 
 function openEditSvc(id) {
-  var s = S.svcs.find(function(x){ return x.id === id; });
+  var s = (S.svcs||[]).find(function(x){ return x.id === id; });
   if(!s) return;
   edSvc = id;
   document.getElementById("svc-title").textContent = "עריכת שירות";
@@ -716,10 +736,10 @@ function saveSvc() {
   if(isNaN(pr) || pr < 0) { errEl.textContent = "נא להזין מחיר תקין"; return; }
   errEl.textContent = "";
   if(edSvc) {
-    var s = S.svcs.find(function(x){ return x.id === edSvc; });
+    var s = (S.svcs||[]).find(function(x){ return x.id === edSvc; });
     if(s) { s.lbl = n; s.price = pr; }
   } else {
-    S.svcs.push({ id: "s" + Date.now(), lbl: n, price: pr });
+    (S.svcs=S.svcs||[]).push({ id: "s" + Date.now(), lbl: n, price: pr });
   }
   sv();
   closeM("m-svc");
@@ -728,7 +748,7 @@ function saveSvc() {
 
 function delSvc(id) {
   if(!confirm("למחוק שירות זה?")) return;
-  S.svcs = S.svcs.filter(function(s){ return s.id !== id; });
+  S.svcs = (S.svcs||[]).filter(function(s){ return s.id !== id; });
   sv();
   rSvcs();
 }
@@ -754,7 +774,7 @@ function saveGoal(){ S.goal=parseInt(document.getElementById("goal-v").value)||0
     db.ref("businesses/"+saved).once("value").then(function(snap){
       var biz=snap.val();
       if(biz&&biz.data){
-        S=biz.data; bizCode=saved;
+        S=ensureS(biz.data); bizCode=saved;
         try{localStorage.setItem("crewos_cache_"+saved,JSON.stringify(S));}catch(e){}
       }
       if(S&&bizCode){
