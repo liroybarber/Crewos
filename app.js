@@ -112,6 +112,7 @@ function registerBiz(){
   var bizName   = document.getElementById("reg-biz-name").value.trim();
   var ownerName = document.getElementById("reg-owner-name").value.trim();
   var phone     = document.getElementById("reg-phone").value.trim();
+  var email     = document.getElementById("reg-email").value.trim().toLowerCase();
   var sitePass  = document.getElementById("reg-site-pass").value.replace(/\s/g,"");
   var ownerPass = document.getElementById("reg-owner-pass").value.replace(/\s/g,"");
   var ownerPass2= document.getElementById("reg-owner-pass2").value.replace(/\s/g,"");
@@ -120,17 +121,27 @@ function registerBiz(){
   if(!bizName)                          {err.textContent="נא להזין שם מספרה";return;}
   if(!ownerName)                        {err.textContent="נא להזין שם בעל העסק";return;}
   if(!phone)                            {err.textContent="נא להזין מספר טלפון";return;}
+  if(!email||!email.includes("@"))      {err.textContent="נא להזין כתובת מייל תקינה";return;}
   if(!/^\d{4}$/.test(sitePass))         {err.textContent="סיסמת כניסה: 4 ספרות בלבד";return;}
   if(!/^\d{4}$/.test(ownerPass))        {err.textContent="סיסמת בעל עסק: 4 ספרות בלבד";return;}
   if(ownerPass!==ownerPass2)            {err.textContent="אישור סיסמת בעל עסק לא תואם";return;}
   err.textContent="רושם...";
-  var phoneKey = phone.replace(/\D/g,"");
+  var phoneKey  = phone.replace(/\D/g,"");
+  var emailKey  = email.replace(/\./g,","); /* Firebase לא מאפשר נקודות במפתח */
   db.ref("phones/"+phoneKey).once("value").then(function(snap){
-    if(snap.val()){err.textContent="מספר טלפון כבר רשום";return;}
-    var code = genCode();
+    if(snap.val()){err.textContent="מספר טלפון כבר רשום"; return;}
+    return db.ref("emails/"+emailKey).once("value");
+  }).then(function(snap){
+    if(!snap) return; /* כבר נתפס בשגיאת טלפון */
+    if(snap.val()){err.textContent="מייל זה כבר רשום במערכת"; return;}
+    var code    = genCode();
     var newData = defS(bizName,ownerName,sitePass,ownerPass,phone);
-    db.ref("businesses/"+code).set({bizName:bizName,ownerName:ownerName,phone:phone,createdAt:new Date().toISOString(),data:newData})
-    .then(function(){ return db.ref("phones/"+phoneKey).set(code); })
+    newData.ownerEmail = email;
+    return db.ref("businesses/"+code).set({
+      bizName:bizName,ownerName:ownerName,phone:phone,
+      ownerEmail:email,createdAt:new Date().toISOString(),data:newData
+    }).then(function(){ return db.ref("phones/"+phoneKey).set(code); })
+    .then(function(){ return db.ref("emails/"+emailKey).set(code); })
     .then(function(){
       bizCode=code; S=newData;
       try{localStorage.setItem("crewos_biz",code);}catch(e){}
@@ -140,8 +151,43 @@ function registerBiz(){
       document.getElementById("succ-phone").textContent=phone;
       document.getElementById("succ-site-pass").textContent=sitePass;
       showPg("pg-reg-success");
-    }).catch(function(e){err.textContent="שגיאה ברישום, נסה שוב"; console.error(e);});
-  }).catch(function(){err.textContent="שגיאת חיבור";});
+    });
+  }).catch(function(e){err.textContent="שגיאה ברישום, נסה שוב"; console.error(e);});
+}
+
+/* ── RECOVERY BY EMAIL ── */
+async function recoverByEmail(){
+  var emailEl = document.getElementById("login-forgot-email");
+  var msg     = document.getElementById("login-forgot-msg");
+  var btn     = document.getElementById("login-forgot-btn");
+  var email   = (emailEl&&emailEl.value.trim().toLowerCase())||"";
+  if(!email||!email.includes("@")){
+    if(msg){msg.style.color="var(--re)";msg.textContent="נא להזין מייל תקין";}
+    return;
+  }
+  if(btn) btn.disabled=true;
+  if(msg){msg.style.color="var(--mu)";msg.textContent="מחפש...";}
+  try{
+    var emailKey = email.replace(/\./g,",");
+    var snap = await db.ref("emails/"+emailKey).once("value");
+    var code = snap.val();
+    if(!code){
+      if(msg){msg.style.color="var(--re)";msg.textContent="מייל לא נמצא במערכת";}
+    } else {
+      /* טען את שם העסק */
+      var bizSnap = await db.ref("businesses/"+code+"/bizName").once("value");
+      var name = bizSnap.val()||"";
+      if(msg){
+        msg.style.color="var(--gr)";
+        msg.innerHTML="קוד העסק שלך: <strong style='font-size:22px;letter-spacing:4px'>"+code+"</strong>"+(name?"<br><span style='font-size:11px;color:var(--mu)'>"+name+"</span>":"");
+      }
+    }
+  }catch(e){
+    if(msg){msg.style.color="var(--re)";msg.textContent="שגיאת חיבור";}
+    console.error("[RECOVER]",e);
+  }finally{
+    if(btn) btn.disabled=false;
+  }
 }
 
 /* ── SITE LOGIN ── */
