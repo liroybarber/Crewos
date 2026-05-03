@@ -112,102 +112,74 @@ function registerBiz(){
   var bizName   = document.getElementById("reg-biz-name").value.trim();
   var ownerName = document.getElementById("reg-owner-name").value.trim();
   var phone     = document.getElementById("reg-phone").value.trim();
-  var email     = (document.getElementById("reg-email")&&document.getElementById("reg-email").value.trim().toLowerCase())||"";
   var sitePass  = document.getElementById("reg-site-pass").value.replace(/\s/g,"");
   var ownerPass = document.getElementById("reg-owner-pass").value.replace(/\s/g,"");
   var ownerPass2= document.getElementById("reg-owner-pass2").value.replace(/\s/g,"");
   var err       = document.getElementById("reg-err");
   err.textContent="";
-  if(!bizName)                 {err.textContent="נא להזין שם מספרה";return;}
-  if(!ownerName)               {err.textContent="נא להזין שם בעל העסק";return;}
-  if(!phone)                   {err.textContent="נא להזין מספר טלפון";return;}
-  if(!/^\d{4}$/.test(sitePass)){err.textContent="סיסמת כניסה לעסק: 4 ספרות";return;}
-  if(!/^\d{4}$/.test(ownerPass)){err.textContent="סיסמת בעל עסק: 4 ספרות";return;}
-  if(ownerPass!==ownerPass2)   {err.textContent="אישור סיסמת בעל עסק לא תואם";return;}
+  if(!bizName)                          {err.textContent="נא להזין שם מספרה";return;}
+  if(!ownerName)                        {err.textContent="נא להזין שם בעל העסק";return;}
+  if(!phone)                            {err.textContent="נא להזין מספר טלפון";return;}
+  if(!/^\d{4}$/.test(sitePass))         {err.textContent="סיסמת כניסה: 4 ספרות בלבד";return;}
+  if(!/^\d{4}$/.test(ownerPass))        {err.textContent="סיסמת בעל עסק: 4 ספרות בלבד";return;}
+  if(ownerPass!==ownerPass2)            {err.textContent="אישור סיסמת בעל עסק לא תואם";return;}
   err.textContent="רושם...";
-  var regBtn=document.getElementById("reg-btn"); if(regBtn)regBtn.disabled=true;
-  var phoneKey=phone.replace(/\D/g,"");
+  var phoneKey = phone.replace(/\D/g,"");
   db.ref("phones/"+phoneKey).once("value").then(function(snap){
-    if(snap.val()){err.textContent="מספר טלפון כבר רשום"; if(regBtn)regBtn.disabled=false; return;}
-    var code=genCode();
-    var newData=defS(bizName,ownerName,sitePass,ownerPass,phone);
-    if(email) newData.ownerEmail=email; /* שמור מייל רק לשחזור */
-    db.ref("businesses/"+code).set({
-      businessName: bizName,
-      ownerName:    ownerName,
-      ownerPhone:   phone,
-      ownerEmail:   email||"",
-      createdAt:    new Date().toISOString(),
-      data:         newData
-    }).then(function(){
-      return db.ref("phones/"+phoneKey).set(code);
-    }).then(function(){
-      /* אם יש מייל — שמור מיפוי מייל → קוד עסק לשחזור בלבד */
-      if(email) return db.ref("emails/"+email.replace(/\./g,",")+"/businessCode").set(code);
-    }).then(function(){
+    if(snap.val()){err.textContent="מספר טלפון כבר רשום";return;}
+    var code = genCode();
+    var newData = defS(bizName,ownerName,sitePass,ownerPass,phone);
+    db.ref("businesses/"+code).set({bizName:bizName,ownerName:ownerName,phone:phone,createdAt:new Date().toISOString(),data:newData})
+    .then(function(){ return db.ref("phones/"+phoneKey).set(code); })
+    .then(function(){
       bizCode=code; S=newData;
       try{localStorage.setItem("crewos_biz",code);}catch(e){}
       try{localStorage.setItem("crewos_cache_"+code,JSON.stringify(S));}catch(e){}
-      var sn=document.getElementById("succ-name"),sb2=document.getElementById("succ-biz"),sp=document.getElementById("succ-phone"),ss=document.getElementById("succ-site-pass");
-      if(sn)sn.textContent="ברוך הבא, "+ownerName+"!";
-      if(sb2)sb2.textContent=bizName;
-      if(sp)sp.textContent=phone;
-      if(ss)ss.textContent=sitePass;
+      document.getElementById("succ-name").textContent="ברוך הבא, "+ownerName+"!";
+      document.getElementById("succ-biz").textContent=bizName;
+      document.getElementById("succ-phone").textContent=phone;
+      document.getElementById("succ-site-pass").textContent=sitePass;
       showPg("pg-reg-success");
-    }).catch(function(e){
-      err.textContent="שגיאה ברישום, נסה שוב";
-      console.error("[REGISTER]",e);
-      if(regBtn)regBtn.disabled=false;
-    });
-  }).catch(function(){err.textContent="שגיאת חיבור"; if(regBtn)regBtn.disabled=false;});
+    }).catch(function(e){err.textContent="שגיאה ברישום, נסה שוב"; console.error(e);});
+  }).catch(function(){err.textContent="שגיאת חיבור";});
 }
+
 /* ── SITE LOGIN ── */
-/* כניסה עם קוד עסק 4 ספרות */
 async function siteLogin(){
-  var codeVal = (document.getElementById("login-biz-code")&&document.getElementById("login-biz-code").value.replace(/\s/g,""))||"";
+  var phone   = document.getElementById("login-phone").value.trim().replace(/\D/g,"");
+  var sitePwd = document.getElementById("login-site-pass").value.replace(/\s/g,"");
   var err     = document.getElementById("login-err");
   var btn     = document.getElementById("login-btn-submit");
   err.textContent="";
-  if(!/^\d{4}$/.test(codeVal)){err.textContent="נא להזין קוד עסק של 4 ספרות";return;}
+  if(!phone)                    {err.textContent="נא להזין מספר טלפון";return;}
+  if(!/^\d{4}$/.test(sitePwd)) {err.textContent="נא להזין סיסמה של 4 ספרות";return;}
   err.textContent="בודק..."; btn.disabled=true;
   try{
-    var bizSnap = await db.ref("businesses/"+codeVal).once("value");
-    var biz = bizSnap.val();
-    if(!biz||!biz.data){err.textContent="קוד עסק לא נמצא"; btn.disabled=false; return;}
+    var phoneSnap;
+    try{ phoneSnap=await db.ref("phones/"+phone).once("value"); }
+    catch(e){ err.textContent="שגיאת חיבור ("+( e.code||"unknown")+")"; btn.disabled=false; return; }
+    var businessId=phoneSnap.val();
+    if(!businessId){err.textContent="מספר טלפון לא נמצא"; btn.disabled=false; return;}
+    var bizSnap;
+    try{ bizSnap=await db.ref("businesses/"+businessId).once("value"); }
+    catch(e){ err.textContent="שגיאה בטעינת העסק ("+( e.code||"unknown")+")"; btn.disabled=false; return; }
+    var biz=bizSnap.val();
+    if(!biz){err.textContent="עסק לא נמצא"; btn.disabled=false; return;}
+    if(!biz.data){err.textContent="נתוני עסק חסרים"; btn.disabled=false; return;}
+    var data=biz.data;
+    var storedSite=(data.sitePassword||data.sitePin||data.accessPass||"").replace(/\s/g,"");
+    console.log("[LOGIN] phone:",phone,"storedSite.length:",storedSite.length,"entered.length:",sitePwd.length,"match:",storedSite===sitePwd);
+    if(!storedSite){err.textContent="סיסמת כניסה לא מוגדרת"; btn.disabled=false; return;}
+    if(storedSite!==sitePwd){err.textContent="סיסמת כניסה שגויה"; btn.disabled=false; return;}
     err.textContent=""; btn.disabled=false;
-    bizCode=codeVal; S=ensureS(biz.data);
-    try{localStorage.setItem("crewos_biz",codeVal);}catch(e){}
-    try{localStorage.setItem("crewos_cache_"+codeVal,JSON.stringify(S));}catch(e){}
-    var bd=document.getElementById("biz-name-display"); if(bd)bd.textContent=S.bizName||"המספרה";
+    bizCode=businessId; S=ensureS(data);
+    try{localStorage.setItem("crewos_biz",businessId);}catch(e){}
+    try{localStorage.setItem("crewos_cache_"+businessId,JSON.stringify(S));}catch(e){}
+    document.getElementById("biz-name-display").textContent=S.bizName||"המספרה";
     lSel="owner"; pin=""; renderLogin(); showPg("pg-login");
-  }catch(e){
-    console.error("[LOGIN]",e);
-    err.textContent="שגיאת חיבור: "+(e.code||e.message||e);
-    btn.disabled=false;
-  }
+  }catch(e){ console.error("[LOGIN] unexpected:",e); err.textContent="שגיאה: "+(e.message||e); btn.disabled=false; }
 }
 
-/* שחזור קוד עסק דרך מייל */
-async function recoverByEmail(){
-  var emailEl = document.getElementById("login-forgot-email");
-  var msg     = document.getElementById("login-forgot-msg");
-  var btn     = document.getElementById("login-forgot-btn");
-  var email   = (emailEl&&emailEl.value.trim().toLowerCase())||"";
-  if(!email||!email.includes("@")){if(msg)msg.textContent="נא להזין מייל תקין"; return;}
-  if(btn)btn.disabled=true;
-  try{
-    var snap = await db.ref("emails/"+email.replace(/\./g,",")+"/businessCode").once("value");
-    var code = snap.val();
-    if(!code){
-      if(msg){msg.style.color="var(--re)";msg.textContent="מייל לא נמצא במערכת";}
-      if(btn)btn.disabled=false; return;
-    }
-    if(msg){msg.style.color="var(--gr)";msg.textContent="קוד העסק שלך: "+code;}
-  }catch(e){
-    if(msg){msg.style.color="var(--re)";msg.textContent="שגיאה: "+(e.message||e.code||e);}
-    console.error("[RECOVER]",e);
-  }finally{if(btn)btn.disabled=false;}
-}
 /* ── PICK USER LOGIN ── */
 function renderLogin(){
   if(!S) return;
@@ -832,7 +804,7 @@ function saveGoal(){S.goal=n(parseInt((document.getElementById("goal-v")&&docume
   bindBtn("reg-back",         function(){ showPg("pg-welcome"); });
   bindBtn("succ-enter-btn",   function(){ ses={role:"owner"}; rOwner(); showPg("pg-owner"); });
 
-  /* Auto-login from localStorage */
+  /* Auto-login */
   var saved=localStorage.getItem("crewos_biz");
   if(saved){
     try{var c=localStorage.getItem("crewos_cache_"+saved);if(c){S=ensureS(JSON.parse(c));bizCode=saved;}}catch(e){}
@@ -840,9 +812,10 @@ function saveGoal(){S.goal=n(parseInt((document.getElementById("goal-v")&&docume
       var biz=snap.val();
       if(biz&&biz.data){S=ensureS(biz.data);bizCode=saved;try{localStorage.setItem("crewos_cache_"+saved,JSON.stringify(S));}catch(e){}}
       if(S&&bizCode){
+        console.log("[AUTO-LOGIN] biz:",bizCode,"ownerPassword.length:",(S.ownerPassword||"").length,"sitePassword.length:",(S.sitePassword||"").length);
         var bd=document.getElementById("biz-name-display");if(bd)bd.textContent=S.bizName||"המספרה";
         lSel="owner";pin="";renderLogin();showPg("pg-login");
       }
-    }).catch(function(e){console.error("[AUTO-LOGIN error]",e);});
+    }).catch(function(e){console.error("[AUTO-LOGIN ERROR]",e);});
   }
 })();
