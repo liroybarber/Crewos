@@ -10,7 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<link rel="stylesheet" href="style.css?v=1.5.0">
+<link rel="stylesheet" href="style.css?v=2.0.0">
 </head>
 <body>
 
@@ -143,11 +143,15 @@
         <span style="font-size:13px;color:var(--mu)">טלפון לכניסה</span>
         <span id="succ-phone" style="font-size:13px;font-weight:700;color:var(--or)"></span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:13px;color:var(--mu)">סיסמת כניסה לעסק</span>
-        <span id="succ-site-pass" style="font-size:20px;font-weight:900;color:var(--gr);letter-spacing:4px"></span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:13px;color:var(--mu)">סיסמת ניהול</span>
+        <span id="succ-site-pass" style="font-size:16px;font-weight:900;color:var(--or);letter-spacing:4px"></span>
       </div>
-      <div style="font-size:11px;color:var(--dm);margin-top:12px;padding-top:12px;border-top:1px solid var(--br)">שמור פרטים אלה. שלח סיסמת כניסה לעובדים שלך.</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:var(--mu)">קוד לעובדים</span>
+        <span id="succ-emp-code" style="font-size:20px;font-weight:900;color:var(--gr);letter-spacing:4px"></span>
+      </div>
+      <div style="font-size:11px;color:var(--dm);margin-top:12px;padding-top:12px;border-top:1px solid var(--br)">שמור. שלח את קוד העובדים לעובדים שלך.</div>
     </div>
     <button id="succ-enter-btn" class="bg" style="width:100%;height:54px;font-size:16px;margin-top:12px">כנס לעסק שלי</button>
   </div>
@@ -155,6 +159,49 @@
 </div>
 
 <!-- SCREEN 5: PICK USER -->
+<!-- SCREEN: EMP PICKER -->
+<div id="pg-emp-picker" class="pg">
+<div style="padding:52px 20px 80px;overflow-y:auto">
+  <div id="emp-picker-content"></div>
+  <button id="emp-picker-back" class="btn-secondary" style="width:100%;height:44px;font-size:14px;margin-top:8px">חזור</button>
+</div>
+</div>
+
+<!-- SCREEN: EMP PIN -->
+<div id="pg-emp-pin" class="pg">
+<div class="cw2">
+  <div style="text-align:center;margin-bottom:24px">
+    <div id="emp-pin-name" style="font-size:18px;font-weight:900;margin-bottom:6px"></div>
+    <div style="font-size:13px;color:var(--mu)">הזן קוד כניסה</div>
+  </div>
+  <div style="width:100%;max-width:320px">
+    <div class="pds">
+      <div class="dt" id="ep0"></div>
+      <div class="dt" id="ep1"></div>
+      <div class="dt" id="ep2"></div>
+      <div class="dt" id="ep3"></div>
+    </div>
+    <div id="emp-pin-err" style="color:var(--re);font-size:12px;min-height:18px;margin-bottom:10px;text-align:center"></div>
+    <div class="pg2">
+      <button class="pk" onclick="epk('1')">1</button>
+      <button class="pk" onclick="epk('2')">2</button>
+      <button class="pk" onclick="epk('3')">3</button>
+      <button class="pk" onclick="epk('4')">4</button>
+      <button class="pk" onclick="epk('5')">5</button>
+      <button class="pk" onclick="epk('6')">6</button>
+      <button class="pk" onclick="epk('7')">7</button>
+      <button class="pk" onclick="epk('8')">8</button>
+      <button class="pk" onclick="epk('9')">9</button>
+      <button class="pk em"></button>
+      <button class="pk" onclick="epk('0')">0</button>
+      <button class="pk del" onclick="epdel()">⌫</button>
+    </div>
+    <button id="emp-pin-btn" class="bg" style="width:100%;height:52px;font-size:15px;margin-top:16px;opacity:.4" disabled>כניסה</button>
+    <button id="emp-pin-back" class="btn-secondary" style="width:100%;height:44px;font-size:14px;margin-top:8px">חזור</button>
+  </div>
+</div>
+</div>
+
 <div id="pg-login" class="pg">
 <div class="cw2">
   <div style="text-align:center;margin-bottom:24px">
@@ -336,6 +383,7 @@
     <div style="font-size:12px;color:var(--ye);font-weight:700;margin-bottom:10px">אחוז לעובד לפי שירות</div>
     <div id="ed-spct"></div>
   </div>
+  <div id="ed-emp-svcs"></div>
   <button onclick="saveEdit()" class="bg" style="width:100%;height:52px;font-size:16px;margin-bottom:10px">שמור שינויים</button>
   <button onclick="deleteEmp(edId)" class="btn-danger" style="width:100%;height:46px;font-size:14px">🗑 מחק עובד</button>
 </div>
@@ -386,6 +434,6 @@
 </div>
 </div>
 
-<script src="app.js?v=1.5.0"></script>
+<script src="app.js?v=2.0.0"></script>
 </body>
 </html>
