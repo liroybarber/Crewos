@@ -376,7 +376,7 @@ function confirmUnlock(){
   var ue=document.getElementById("unlock-err");
   if(enteredPin!==ownerPwd){ue.textContent="\u05e1\u05d9\u05e1\u05de\u05d0\u05d4 \u05e9\u05d2\u05d5\u05d9\u05d4";return;}
   if(S.closedDays&&S.closedDays[unlockTarget]) delete S.closedDays[unlockTarget];
-  sv(); closeM("m-unlock"); rOwner();
+  sv(); closeM("m-unlock"); owTab("today");
 }
 
 /* ── OWNER DASHBOARD ── */
@@ -548,7 +548,7 @@ function rHistory(){
     h+="<div class=card>";
     h+="<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px'>";
     h+="<div style='font-size:13px;font-weight:800'>"+(closed?"\uD83D\uDD12 ":"")+dateLbl+"</div>";
-    if(closed&&ses&&ses.role==="owner"){h+="<button onclick='openUnlockModal(\""+d+"\")' style='height:28px;padding:0 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--re);border-radius:8px;font-size:11px;font-weight:700'>\u05e4\u05ea\u05d7</button>";}
+
     h+="</div>";
     rows.forEach(function(row){
       var empName=row.emp.name,empColor=row.emp.color||"#E8782A";
@@ -589,6 +589,11 @@ function rSvcs(){
   h+="<div class=fw><div class=fl>\u05d0\u05e9\u05e8 \u05e1\u05d9\u05e1\u05de\u05ea \u05d1\u05e2\u05dc \u05e2\u05e1\u05e7</div><input type='password' id='new-owner-pass2' maxlength='4' inputmode='numeric' placeholder='••••'></div>";
   h+="<div id='owner-pass-msg' style='font-size:12px;min-height:16px;margin-bottom:8px'></div>";
   h+="<button onclick='changeOwnerPass()' class=bg style='width:100%;height:44px;border-radius:12px;font-size:14px'>\u05e9\u05de\u05d5\u05e8 \u05e1\u05d9\u05e1\u05de\u05ea \u05d1\u05e2\u05dc \u05e2\u05e1\u05e7</button></div>";
+  h+="<div style='margin-top:22px'></div><div class=sl>\u05d2\u05d9\u05d1\u05d5\u05d9</div><div class=card>";
+  h+="<div style='font-size:12px;color:var(--mu);margin-bottom:12px'>\u05de\u05d5\u05e8\u05d9\u05d3 \u05e7\u05d5\u05d1\u05e5 JSON \u05e2\u05dd \u05db\u05dc \u05e0\u05ea\u05d5\u05e0\u05d9 \u05d4\u05de\u05e2\u05e8\u05db\u05ea</div>";
+  h+="<button onclick='backupSystem()' id='backup-btn' class='bg2' style='width:100%;height:48px;font-size:14px'>\u05d2\u05d9\u05d1\u05d5\u05d9 \u05de\u05dc\u05d0 \u05de\u05e2\u05e8\u05db\u05ea</button>";
+  h+="<div id='backup-msg' style='font-size:12px;min-height:16px;margin-top:8px;text-align:center'></div>";
+  h+="</div>";
   var ts=document.getElementById("t-svcs"); if(ts)ts.innerHTML=h;
 }
 function changeSitePass(){
@@ -982,6 +987,49 @@ function delSvc(id){
 function saveGoal(){
   S.goal=ri(n(parseInt((document.getElementById("goal-v")&&document.getElementById("goal-v").value)||"0")));
   sv(); closeM("m-goal"); rReport();
+}
+
+/* ── BACKUP ── */
+async function backupSystem(){
+  var btn=document.getElementById("backup-btn");
+  var msg=document.getElementById("backup-msg");
+  if(btn){btn.disabled=true;btn.textContent="\u05d8\u05d5\u05e2\u05df...";}
+  if(msg){msg.style.color="var(--mu)";msg.textContent="\u05de\u05d5\u05e9\u05da \u05e0\u05ea\u05d5\u05e0\u05d9\u05dd...";}
+  try{
+    var snap=await db.ref("/").once("value");
+    var allData=snap.val()||{};
+    var d=new Date();
+    var dateStr=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    var payload={
+      backupDate:new Date().toISOString(),
+      businesses:allData.businesses||{},
+      phones:allData.phones||{},
+      emails:allData.emails||{},
+      dailyReports:{}
+    };
+    /* collect dailyReports nested under each business */
+    if(allData.businesses){
+      Object.keys(allData.businesses).forEach(function(bId){
+        var biz=allData.businesses[bId];
+        if(biz&&biz.dailyReports) payload.dailyReports[bId]=biz.dailyReports;
+      });
+    }
+    var json=JSON.stringify(payload,null,2);
+    var blob=new Blob([json],{type:"application/json"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url; a.download="crewos-backup-"+dateStr+".json";
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    if(msg){msg.style.color="var(--gr)";msg.textContent="\u05d2\u05d9\u05d1\u05d5\u05d9 \u05d4\u05d5\u05e8\u05d3 \u05d1\u05d4\u05e6\u05dc\u05d7\u05d4 \u2713";}
+  }catch(e){
+    console.error("[BACKUP]",e);
+    if(msg){msg.style.color="var(--re)";msg.textContent="\u05e9\u05d2\u05d9\u05d0\u05d4: "+(e.message||e);}
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent="\u05d2\u05d9\u05d1\u05d5\u05d9 \u05de\u05dc\u05d0 \u05de\u05e2\u05e8\u05db\u05ea";}
+    setTimeout(function(){if(msg)msg.textContent="";},5000);
+  }
 }
 
 /* ── INIT ── */
