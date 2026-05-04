@@ -9,7 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<link rel="stylesheet" href="style.css?v=1.4.1">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<link rel="stylesheet" href="style.css?v=1.5.0">
 </head>
 <body>
 
@@ -21,45 +22,69 @@
     <div style="font-size:13px;color:var(--mu);margin-top:8px;letter-spacing:.5px">מערכת ניהול מספרה</div>
   </div>
   <div style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px">
-    <button id="btn-go-login" class="bg" style="width:100%;height:56px;font-size:16px">כניסה לעסק</button>
-    <button id="btn-go-register" class="bg2" style="width:100%;height:56px;font-size:16px">רישום עסק חדש</button>
-    <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--dm)">CREWOS &copy; 2025</div>
+    <button id="btn-go-owner-login" class="bg" style="width:100%;height:56px;font-size:16px">כניסה כבעל עסק</button>
+    <button id="btn-go-emp-login" class="bg2" style="width:100%;height:56px;font-size:16px">כניסה כעובד</button>
+    <button id="btn-go-register" style="width:100%;height:44px;background:transparent;border:none;color:var(--mu);font-size:13px">רישום עסק חדש</button>
+    <div style="text-align:center;font-size:11px;color:var(--dm)">CREWOS &copy; 2025</div>
   </div>
 </div>
 </div>
 
-<!-- SCREEN 2: SITE LOGIN -->
-<div id="pg-site-login" class="pg">
+<!-- SCREEN 2A: OWNER LOGIN -->
+<div id="pg-owner-login" class="pg">
 <div class="cw2">
   <div style="text-align:center;margin-bottom:32px">
-    <div style="font-size:30px;font-weight:900;color:#fff">כניסה לעסק</div>
-    <div style="font-size:13px;color:var(--mu);margin-top:6px">הזן מספר טלפון וסיסמת כניסה</div>
+    <div style="font-size:30px;font-weight:900">כניסה כבעל עסק</div>
+    <div style="font-size:13px;color:var(--mu);margin-top:6px">התחבר עם המייל שלך</div>
   </div>
   <div style="width:100%;max-width:360px">
     <div class="card">
-      <div class="fw"><div class="fl">מספר טלפון של העסק</div>
-        <input type="tel" id="login-phone" placeholder="05X-XXXXXXX" inputmode="tel">
+      <div class="fw">
+        <div class="fl">כתובת מייל</div>
+        <input type="email" id="owner-login-email" placeholder="your@email.com" inputmode="email" autocomplete="email" style="text-align:left;direction:ltr">
       </div>
-      <div class="fw"><div class="fl">סיסמת כניסה לעסק</div>
-        <input type="password" id="login-site-pass" maxlength="4" inputmode="numeric" placeholder="••••">
+      <div class="fw">
+        <div class="fl">הסיסמה שבחרת</div>
+        <input type="password" id="owner-login-pass" placeholder="••••••" autocomplete="current-password">
       </div>
-      <div id="login-err" class="err"></div>
-      <button id="login-btn-submit" class="bg" style="width:100%;height:52px;font-size:16px">כניסה</button>
+      <div id="owner-login-err" class="err"></div>
+      <button id="owner-login-btn" class="bg" style="width:100%;height:52px;font-size:16px">כניסה</button>
     </div>
-    <button onclick="document.getElementById('forgot-section').style.display=document.getElementById('forgot-section').style.display==='none'?'block':'none'" style="width:100%;height:36px;background:transparent;border:none;color:var(--mu);font-size:13px;margin-top:4px">שכחתי סיסמה / קוד עסק</button>
-    <div id="forgot-section" style="display:none;margin-top:4px">
+    <button onclick="document.getElementById('owner-forgot-section').style.display=document.getElementById('owner-forgot-section').style.display==='none'?'block':'none'" style="width:100%;height:36px;background:transparent;border:none;color:var(--mu);font-size:13px;margin-top:4px">שכחתי סיסמה</button>
+    <div id="owner-forgot-section" style="display:none;margin-top:4px">
       <div class="card">
-        <div style="font-size:13px;font-weight:700;margin-bottom:6px">שחזור קוד עסק</div>
-        <div style="font-size:12px;color:var(--mu);margin-bottom:12px">הזן את המייל שנרשם בהרשמה ונציג לך את קוד העסק.</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px">איפוס סיסמה</div>
+        <div style="font-size:12px;color:var(--mu);margin-bottom:12px">נשלח לך מייל לאיפוס הסיסמה.</div>
         <div class="fw">
-          <div class="fl">מייל</div>
-          <input type="email" id="login-forgot-email" placeholder="your@email.com" inputmode="email" style="text-align:left;direction:ltr">
+          <div class="fl">כתובת מייל</div>
+          <input type="email" id="owner-forgot-email" placeholder="your@email.com" inputmode="email" style="text-align:left;direction:ltr">
         </div>
-        <div id="login-forgot-msg" style="font-size:12px;min-height:20px;margin-bottom:8px;text-align:center"></div>
-        <button id="login-forgot-btn" onclick="recoverByEmail()" class="btn-secondary" style="width:100%;height:44px;font-size:14px">הצג קוד עסק</button>
+        <div id="owner-forgot-msg" style="font-size:12px;min-height:20px;margin-bottom:8px;text-align:center"></div>
+        <button id="owner-forgot-btn" onclick="ownerForgotPassword()" class="btn-secondary" style="width:100%;height:44px;font-size:14px">שלח מייל לאיפוס</button>
       </div>
     </div>
-    <button id="login-back" class="btn-secondary" style="width:100%;height:44px;font-size:14px;margin-top:8px">חזור</button>
+    <button id="owner-login-back" class="btn-secondary" style="width:100%;height:44px;font-size:14px;margin-top:8px">חזור</button>
+  </div>
+</div>
+</div>
+
+<!-- SCREEN 2B: EMPLOYEE LOGIN -->
+<div id="pg-emp-login" class="pg">
+<div class="cw2">
+  <div style="text-align:center;margin-bottom:32px">
+    <div style="font-size:30px;font-weight:900">כניסה כעובד</div>
+    <div style="font-size:13px;color:var(--mu);margin-top:6px">הזן את קוד העסק שלך</div>
+  </div>
+  <div style="width:100%;max-width:360px">
+    <div class="card">
+      <div class="fw">
+        <div class="fl">קוד עסק (4 ספרות)</div>
+        <input type="number" id="emp-login-code" placeholder="1234" inputmode="numeric" maxlength="4" style="font-size:28px;font-weight:800;text-align:center;letter-spacing:8px">
+      </div>
+      <div id="emp-login-err" class="err"></div>
+      <button id="emp-login-btn" class="bg" style="width:100%;height:52px;font-size:16px">המשך</button>
+    </div>
+    <button id="emp-login-back" class="btn-secondary" style="width:100%;height:44px;font-size:14px;margin-top:8px">חזור</button>
   </div>
 </div>
 </div>
@@ -75,18 +100,24 @@
     <div class="fw"><div class="fl">שם המספרה</div><input type="text" id="reg-biz-name" placeholder="לדוגמה: מספרת כהן"></div>
     <div class="fw"><div class="fl">שם בעל העסק</div><input type="text" id="reg-owner-name" placeholder="שם מלא"></div>
     <div class="fw"><div class="fl">מספר טלפון</div><input type="tel" id="reg-phone" placeholder="05X-XXXXXXX" inputmode="tel"></div>
-    <div class="fw"><div class="fl">מייל בעל העסק (לשחזור סיסמה)</div><input type="email" id="reg-email" placeholder="your@email.com" inputmode="email" style="text-align:left;direction:ltr"></div>
-    <div style="background:rgba(16,185,129,.06);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid rgba(16,185,129,.15)">
-      <div style="font-size:12px;color:var(--gr);font-weight:700;margin-bottom:2px">סיסמת כניסה לעסק</div>
-      <div style="font-size:11px;color:var(--dm)">לכל העובדים ובעל העסק — לכניסה ראשונית לאתר</div>
+    <div style="background:rgba(59,130,246,.06);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid rgba(59,130,246,.15)">
+      <div style="font-size:12px;color:var(--bl);font-weight:700;margin-bottom:2px">כניסת בעל עסק</div>
+      <div style="font-size:11px;color:var(--dm)">המייל והסיסמה שתבחר ישמשו לכניסה שלך בלבד</div>
     </div>
-    <div class="fw"><div class="fl">סיסמת כניסה לעסק (4 ספרות)</div><input type="password" id="reg-site-pass" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div class="fw"><div class="fl">כתובת מייל</div><input type="email" id="reg-email" placeholder="your@email.com" inputmode="email" autocomplete="email" style="text-align:left;direction:ltr"></div>
+    <div class="fw"><div class="fl">בחר סיסמה (לפחות 6 תווים)</div><input type="password" id="reg-auth-pass" placeholder="••••••" autocomplete="new-password"></div>
+    <div class="fw"><div class="fl">אשר את הסיסמה שבחרת</div><input type="password" id="reg-auth-pass2" placeholder="••••••" autocomplete="new-password"></div>
     <div style="background:rgba(232,120,42,.06);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid rgba(232,120,42,.15)">
-      <div style="font-size:12px;color:var(--or);font-weight:700;margin-bottom:2px">סיסמת בעל העסק</div>
-      <div style="font-size:11px;color:var(--dm)">לבעל העסק בלבד — לניהול, הגדרות, ופתיחת ימים</div>
+      <div style="font-size:12px;color:var(--or);font-weight:700;margin-bottom:2px">סיסמת בעל העסק (4 ספרות)</div>
+      <div style="font-size:11px;color:var(--dm)">לניהול, הגדרות ופתיחת ימים — בתוך האפליקציה</div>
     </div>
-    <div class="fw"><div class="fl">סיסמת בעל העסק (4 ספרות)</div><input type="password" id="reg-owner-pass" maxlength="4" inputmode="numeric" placeholder="••••"></div>
-    <div class="fw"><div class="fl">אישור סיסמת בעל העסק</div><input type="password" id="reg-owner-pass2" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div class="fw"><div class="fl">בחר סיסמת ניהול (4 ספרות)</div><input type="password" id="reg-owner-pass" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div class="fw"><div class="fl">אשר סיסמת ניהול</div><input type="password" id="reg-owner-pass2" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div style="background:rgba(16,185,129,.06);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid rgba(16,185,129,.15)">
+      <div style="font-size:12px;color:var(--gr);font-weight:700;margin-bottom:2px">סיסמת כניסה לעסק לעובדים (4 ספרות)</div>
+      <div style="font-size:11px;color:var(--dm)">העובדים ישתמשו בקוד זה כדי להיכנס</div>
+    </div>
+    <div class="fw"><div class="fl">בחר סיסמת כניסה לעובדים (4 ספרות)</div><input type="password" id="reg-site-pass" maxlength="4" inputmode="numeric" placeholder="••••"></div>
     <div id="reg-err" class="err"></div>
     <button id="reg-btn" class="bg" style="width:100%;height:52px;font-size:16px">צור עסק</button>
   </div>
@@ -355,6 +386,6 @@
 </div>
 </div>
 
-<script src="app.js?v=1.4.1"></script>
+<script src="app.js?v=1.5.0"></script>
 </body>
 </html>
