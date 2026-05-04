@@ -46,31 +46,6 @@
       <div id="login-err" class="err"></div>
       <button id="login-btn-submit" class="bg" style="width:100%;height:52px;font-size:16px">כניסה</button>
     </div>
-    <button onclick="document.getElementById('forgot-section').style.display=document.getElementById('forgot-section').style.display==='none'?'block':'none'" style="width:100%;height:36px;background:transparent;border:none;color:var(--mu);font-size:13px;margin-top:4px">שכחתי סיסמה</button>
-    <div id="forgot-section" style="display:none;margin-top:4px">
-      <div class="card">
-        <div style="font-size:13px;font-weight:700;margin-bottom:6px">שחזור סיסמה</div>
-        <div style="font-size:12px;color:var(--mu);margin-bottom:12px">הזן את המייל שנרשם בעת פתיחת העסק.</div>
-        <div class="fw">
-          <div class="fl">מייל בעל העסק</div>
-          <input type="email" id="forgot-email" placeholder="your@email.com" inputmode="email" style="text-align:left;direction:ltr">
-        </div>
-        <div id="forgot-msg" style="font-size:12px;min-height:20px;margin-bottom:8px;text-align:center"></div>
-        <button id="forgot-btn" onclick="ownerForgotPassword()" class="btn-secondary" style="width:100%;height:44px;font-size:14px">בדוק מייל</button>
-        <div id="forgot-reset-form" style="display:none;margin-top:14px">
-          <div style="font-size:12px;color:var(--or);font-weight:700;margin-bottom:10px">הגדר סיסמאות חדשות:</div>
-          <div class="fw">
-            <div class="fl">סיסמת כניסה חדשה (4 ספרות)</div>
-            <input type="password" id="forgot-new-site" maxlength="4" inputmode="numeric" placeholder="••••">
-          </div>
-          <div class="fw">
-            <div class="fl">סיסמת ניהול חדשה (4 ספרות)</div>
-            <input type="password" id="forgot-new-owner" maxlength="4" inputmode="numeric" placeholder="••••">
-          </div>
-          <button onclick="ownerResetPasswords()" class="bg" style="width:100%;height:44px;font-size:14px">עדכן סיסמאות</button>
-        </div>
-      </div>
-    </div>
     <button id="login-back" class="btn-secondary" style="width:100%;height:44px;font-size:14px;margin-top:8px">חזור</button>
   </div>
 </div>
@@ -87,11 +62,6 @@
     <div class="fw"><div class="fl">שם המספרה</div><input type="text" id="reg-biz-name" placeholder="לדוגמה: מספרת כהן"></div>
     <div class="fw"><div class="fl">שם בעל העסק</div><input type="text" id="reg-owner-name" placeholder="שם מלא"></div>
     <div class="fw"><div class="fl">מספר טלפון</div><input type="tel" id="reg-phone" placeholder="05X-XXXXXXX" inputmode="tel"></div>
-    <div style="background:rgba(59,130,246,.06);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid rgba(59,130,246,.15)">
-      <div style="font-size:12px;color:var(--bl);font-weight:700;margin-bottom:2px">מייל לשחזור סיסמה בלבד</div>
-      <div style="font-size:11px;color:var(--dm)">המייל לא משמש לכניסה — רק לאיפוס סיסמה בעת הצורך</div>
-    </div>
-    <div class="fw"><div class="fl">מייל בעל העסק</div><input type="email" id="reg-email" placeholder="your@email.com" inputmode="email" style="text-align:left;direction:ltr"></div>
     <div style="background:rgba(16,185,129,.06);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid rgba(16,185,129,.15)">
       <div style="font-size:12px;color:var(--gr);font-weight:700;margin-bottom:2px">סיסמת כניסה לעסק</div>
       <div style="font-size:11px;color:var(--dm)">לכל העובדים ובעל העסק — לכניסה ראשונית לאתר</div>
