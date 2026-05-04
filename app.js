@@ -112,6 +112,7 @@ function registerBiz(){
   var bizName   = document.getElementById("reg-biz-name").value.trim();
   var ownerName = document.getElementById("reg-owner-name").value.trim();
   var phone     = document.getElementById("reg-phone").value.trim();
+  var email     = document.getElementById("reg-email").value.trim().toLowerCase();
   var sitePass  = document.getElementById("reg-site-pass").value.replace(/\s/g,"");
   var ownerPass = document.getElementById("reg-owner-pass").value.replace(/\s/g,"");
   var ownerPass2= document.getElementById("reg-owner-pass2").value.replace(/\s/g,"");
@@ -120,6 +121,7 @@ function registerBiz(){
   if(!bizName)                          {err.textContent="נא להזין שם מספרה";return;}
   if(!ownerName)                        {err.textContent="נא להזין שם בעל העסק";return;}
   if(!phone)                            {err.textContent="נא להזין מספר טלפון";return;}
+  if(!email||!email.includes("@"))      {err.textContent="נא להזין מייל תקין (לשחזור סיסמה)";return;}
   if(!/^\d{4}$/.test(sitePass))         {err.textContent="סיסמת כניסה: 4 ספרות בלבד";return;}
   if(!/^\d{4}$/.test(ownerPass))        {err.textContent="סיסמת בעל עסק: 4 ספרות בלבד";return;}
   if(ownerPass!==ownerPass2)            {err.textContent="אישור סיסמת בעל עסק לא תואם";return;}
@@ -129,8 +131,14 @@ function registerBiz(){
     if(snap.val()){err.textContent="מספר טלפון כבר רשום";return;}
     var code = genCode();
     var newData = defS(bizName,ownerName,sitePass,ownerPass,phone);
-    db.ref("businesses/"+code).set({bizName:bizName,ownerName:ownerName,phone:phone,createdAt:new Date().toISOString(),data:newData})
+    newData.ownerEmail = email; /* for password recovery only, not for login */
+    var emailKey = email.replace(/\./g,",");
+    db.ref("businesses/"+code).set({
+      bizName:bizName, ownerName:ownerName, phone:phone,
+      ownerEmail:email, createdAt:new Date().toISOString(), data:newData
+    })
     .then(function(){ return db.ref("phones/"+phoneKey).set(code); })
+    .then(function(){ return db.ref("emails/"+emailKey).set(code); })
     .then(function(){
       bizCode=code; S=newData;
       try{localStorage.setItem("crewos_biz",code);}catch(e){}
@@ -178,6 +186,47 @@ async function siteLogin(){
     document.getElementById("biz-name-display").textContent=S.bizName||"המספרה";
     lSel="owner"; pin=""; renderLogin(); showPg("pg-login");
   }catch(e){ console.error("[LOGIN] unexpected:",e); err.textContent="שגיאה: "+(e.message||e); btn.disabled=false; }
+}
+
+/* ── FORGOT PASSWORD ── */
+async function ownerForgotPassword(){
+  var emailEl = document.getElementById("forgot-email");
+  var msg     = document.getElementById("forgot-msg");
+  var btn     = document.getElementById("forgot-btn");
+  var email   = (emailEl&&emailEl.value.trim().toLowerCase())||"";
+  if(!email||!email.includes("@")){if(msg){msg.style.color="var(--re)";msg.textContent="נא להזין מייל תקין";}return;}
+  if(btn)btn.disabled=true;
+  try{
+    var eSnap = await db.ref("emails/"+email.replace(/\./g,",")).once("value");
+    var code  = eSnap.val();
+    if(!code){
+      if(msg){msg.style.color="var(--re)";msg.textContent="מייל לא נמצא במערכת";}
+      if(btn)btn.disabled=false; return;
+    }
+    var rf = document.getElementById("forgot-reset-form");
+    if(rf){rf.style.display="block"; rf.dataset.bizCode=code;}
+    if(msg){msg.style.color="var(--gr)";msg.textContent="מייל נמצא ✓ הגדר סיסמאות חדשות:";}
+  }catch(e){
+    if(msg){msg.style.color="var(--re)";msg.textContent="שגיאה: "+(e.message||e);}
+  }finally{if(btn)btn.disabled=false;}
+}
+async function ownerResetPasswords(){
+  var rf       = document.getElementById("forgot-reset-form");
+  var code     = rf&&rf.dataset.bizCode;
+  var msg      = document.getElementById("forgot-msg");
+  var newSite  = (document.getElementById("forgot-new-site").value||"").replace(/\s/g,"");
+  var newOwner = (document.getElementById("forgot-new-owner").value||"").replace(/\s/g,"");
+  if(!code){if(msg){msg.style.color="var(--re)";msg.textContent="שגיאה: עסק לא זוהה";}return;}
+  if(!/^\d{4}$/.test(newSite))  {if(msg){msg.style.color="var(--re)";msg.textContent="סיסמת כניסה: 4 ספרות";}return;}
+  if(!/^\d{4}$/.test(newOwner)) {if(msg){msg.style.color="var(--re)";msg.textContent="סיסמת ניהול: 4 ספרות";}return;}
+  try{
+    await db.ref("businesses/"+code+"/data/sitePassword").set(newSite);
+    await db.ref("businesses/"+code+"/data/ownerPassword").set(newOwner);
+    if(msg){msg.style.color="var(--gr)";msg.textContent="סיסמאות עודכנו! ✓ כעת תוכל להתחבר.";}
+    if(rf)rf.style.display="none";
+  }catch(e){
+    if(msg){msg.style.color="var(--re)";msg.textContent="שגיאה: "+(e.message||e);}
+  }
 }
 
 /* ── PICK USER LOGIN ── */
@@ -607,11 +656,16 @@ function rEmp(){
   if(av){av.textContent=e.av;av.style.background=e.color+"22";av.style.border="2px solid "+e.color;av.style.color=e.color;}
   var en=document.getElementById("emp-name"); if(en)en.textContent=e.name;
   var md=e.pm==="percent"?"אחוז לפי שירות":e.pm==="hourly"?n(e.hr)+"\u20AA לשעה":e.pm==="chair_pct"?"כיסא + אחוזים":"שכירת כיסא";
-  var es=document.getElementById("emp-sub"); if(es)es.textContent=e.role+" \u2013 "+md;
+  var esub=document.getElementById("emp-sub"); if(esub)esub.textContent=e.role+" \u2013 "+md;
   var ee=(S.entries&&S.entries[e.id])||{},te=ee[td()],all=Object.values(ee),t2=calc(te?[te]:[],e),mo=calc(all,e);
   var tc=te?n(te.cancels):0,tca=all.reduce(function(s,x){return s+n(x.cancels);},0),avg=all.length?r2(mo.es/all.length):0;
-  var estats=document.getElementById("emp-stats");
-  if(estats)estats.innerHTML=sb("השתכרת היום",formatMoney(t2.es),"","#E8782A")+sb("סה\"כ החודש",formatMoney(mo.es),all.length+" ימים","#10B981")+sb("ממוצע / יום",formatMoney(avg),"","#E8782A")+sb("ביטולים",tc,"סה\"כ: "+tca,"#EF4444");
+  var stats=document.getElementById("emp-stats");
+  /* show ONLY worker's own salary — no business revenue, no owner profit */
+  if(stats)stats.innerHTML=
+    sb("שכרי היום",formatMoney(t2.es),"","#E8782A")+
+    sb("שכרי החודש",formatMoney(mo.es),all.length+" ימים","#10B981")+
+    sb("ממוצע/יום",formatMoney(avg),"","#E8782A")+
+    sb("ביטולים",tc,"סה\"כ: "+tca,"#EF4444");
   var act=document.getElementById("emp-act");
   var dayClosed=isDayClosed(td());
   if(act){
@@ -621,11 +675,19 @@ function rEmp(){
   var sorted=all.slice().sort(function(a,b){return(b.date||"").localeCompare(a.date||"");});
   var hist=sorted.length?"":"<div style='text-align:center;padding:32px 0;color:var(--dm)'>אין נתונים עדיין</div>";
   sorted.forEach(function(en){
-    var er=calc([en],e),ds=en.date?new Date(en.date).toLocaleDateString("he-IL",{weekday:"short",day:"numeric",month:"short"}):"--";
+    var er=calc([en],e);
+    var ds=en.date?new Date(en.date).toLocaleDateString("he-IL",{weekday:"short",day:"numeric",month:"short"}):"--";
     var sm=(en.svcs||[]).filter(function(s){return n(s.cnt)>0;}).map(function(s){return s.lbl+" x"+s.cnt;}).join(" | ");
     var c2=n(en.cancels),t=n(en.tip),h=n(en.hrs);
     var isClosed=isDayClosed(en.date);
-    hist+="<div class=card><div style='display:flex;justify-content:space-between;align-items:center'><div><div style='font-weight:700;font-size:13px'>"+(isClosed?"\uD83D\uDD12 ":"")+ds+"</div><div style='color:var(--dm);font-size:11px;margin-top:2px'>"+sm+(h?" "+h+"h":"")+(c2?" ביטולים:"+c2:"")+(t?" טיפ:"+t:"")+"</div></div><div style='text-align:left'><div style='color:var(--or);font-weight:900;font-size:16px'>"+formatMoney(er.es)+"</div><div style='color:var(--dm);font-size:10px'>"+en.totalSvcs+" שירותים</div></div></div></div>";
+    /* show only worker salary — no gross business amount */
+    hist+="<div class=card><div style='display:flex;justify-content:space-between;align-items:center'>";
+    hist+="<div><div style='font-weight:700;font-size:13px'>"+(isClosed?"\uD83D\uDD12 ":"")+ds+"</div>";
+    hist+="<div style='color:var(--dm);font-size:11px;margin-top:2px'>"+sm+(h?" "+h+"h":"")+(c2?" ביטולים:"+c2:"")+(t?" טיפ:"+t:"")+"</div></div>";
+    hist+="<div style='text-align:left'>";
+    hist+="<div style='color:var(--or);font-weight:900;font-size:16px'>"+formatMoney(er.es)+"</div>";
+    hist+="<div style='color:var(--dm);font-size:10px'>"+n(en.totalSvcs)+" שירותים</div>";
+    hist+="</div></div></div>";
   });
   var eh=document.getElementById("emp-hist"); if(eh)eh.innerHTML=hist;
 }
@@ -640,7 +702,10 @@ function openEntry(eid){
   var e=(S.emps||[]).find(function(x){return x.id===eEid;}); if(!e)return;
   var ex=((S.entries&&S.entries[eEid])||{})[td()];
   eCtr={};eCan=0;eTip=0;eHrs=0;
-  (S.svcs||[]).forEach(function(s){eCtr[s.id]=ex?n(((ex.svcs||[]).find(function(x){return x.id===s.id;})||{cnt:0}).cnt):0;});
+  (S.svcs||[]).forEach(function(s){
+    var sid=String(s.id);
+    eCtr[sid]=ex?n(((ex.svcs||[]).find(function(x){return String(x.id)===sid;})||{cnt:0}).cnt):0;
+  });
   if(ex){eCan=n(ex.cancels);eTip=n(ex.tip);eHrs=n(ex.hrs);}
   var etit=document.getElementById("et-title"); if(etit)etit.textContent="סיכום יום \u2013 "+new Date().toLocaleDateString("he-IL");
   var esub=document.getElementById("et-sub"); if(esub)esub.textContent=e.name;
@@ -656,19 +721,43 @@ function openEntry(eid){
 function rEntrySvcs(){
   var html="";
   (S.svcs||[]).forEach(function(s){
-    html+="<div class=sr><div><div style='font-size:14px;font-weight:600'>"+s.lbl+"</div><div style='color:var(--dm);font-size:11px'>"+formatMoney(s.price)+" / יחידה</div></div>";
-    html+="<div class=cr><button class='cb m' onclick='adjS(\""+s.id+"\",-1)'>-</button><span class=cv id='cv-"+s.id+"'>"+(eCtr[s.id]||0)+"</span><button class='cb p' onclick='adjS(\""+s.id+"\",1)'>+</button></div></div>";
+    var sid = String(s.id);
+    html+="<div class=sr data-svc-row='"+sid+"'>";
+    html+="<div><div style='font-size:14px;font-weight:600'>"+s.lbl+"</div><div style='color:var(--dm);font-size:11px'>"+formatMoney(s.price)+" / יחידה</div></div>";
+    html+="<div class=cr style='pointer-events:auto'>";
+    html+="<button type='button' class='cb m' data-service-id='"+sid+"' data-action='minus' style='pointer-events:auto'>-</button>";
+    html+="<span class=cv id='cv-"+sid+"' style='pointer-events:none'>"+(eCtr[sid]||0)+"</span>";
+    html+="<button type='button' class='cb p' data-service-id='"+sid+"' data-action='plus' style='pointer-events:auto'>+</button>";
+    html+="</div></div>";
   });
-  var es=document.getElementById("e-svcs"); if(es)es.innerHTML=html;
+  var es=document.getElementById("e-svcs");
+  if(es){
+    es.innerHTML=html;
+    /* event delegation — single listener on container */
+    es.onclick=function(ev){
+      var btn=ev.target.closest("button[data-service-id]");
+      if(!btn)return;
+      var sid=btn.getAttribute("data-service-id");
+      var act=btn.getAttribute("data-action");
+      console.log("[SVC CLICK] serviceId:",sid,"serviceName:",(S.svcs||[]).find(function(x){return String(x.id)===sid;})&&(S.svcs||[]).find(function(x){return String(x.id)===sid;}).lbl,"action:",act);
+      adjS(sid, act==="plus"?1:-1);
+    };
+  }
   updTot();
 }
-function adjS(id,d){eCtr[id]=Math.max(0,n(eCtr[id])+d);var el=document.getElementById("cv-"+id);if(el)el.textContent=eCtr[id];updTot();}
+function adjS(id,d){
+  var sid=String(id);
+  eCtr[sid]=Math.max(0,n(eCtr[sid])+d);
+  var el=document.getElementById("cv-"+sid);
+  if(el)el.textContent=eCtr[sid];
+  updTot();
+}
 function adjC(d){eCan=Math.max(0,eCan+d);var el=document.getElementById("e-cancel");if(el)el.textContent=eCan;updTot();}
 function adjT(d){eTip=Math.max(0,eTip+d);var el=document.getElementById("e-tip");if(el)el.textContent=eTip;updTot();}
 function adjH(d){eHrs=Math.max(0,eHrs+d);var el=document.getElementById("e-hrs");if(el)el.textContent=eHrs;updTot();}
 function updTot(){
   var cnt=0,amt=0;
-  (S.svcs||[]).forEach(function(s){cnt+=n(eCtr[s.id]);amt+=n(eCtr[s.id])*n(s.price);});
+  (S.svcs||[]).forEach(function(s){var sid=String(s.id);cnt+=n(eCtr[sid]);amt+=n(eCtr[sid])*n(s.price);});
   var e=(S.emps||[]).find(function(x){return x.id===eEid;})||{};
   var hp=e.pm==="hourly"?r2(n(eHrs)*n(e.hr)):0;
   var el;
@@ -680,7 +769,7 @@ function updTot(){
   var b=document.getElementById("e-save");if(b){b.disabled=false;b.style.opacity="1";}
 }
 function saveEntry(){
-  var svcs=(S.svcs||[]).map(function(s){return{id:s.id,lbl:s.lbl,cnt:n(eCtr[s.id]),price:n(s.price)};});
+  var svcs=(S.svcs||[]).map(function(s){var sid=String(s.id);return{id:sid,lbl:s.lbl,cnt:n(eCtr[sid]),price:n(s.price)};});
   var ts=svcs.reduce(function(s,x){return s+n(x.cnt);},0);
   var tot=r2(svcs.reduce(function(s,x){return s+n(x.cnt)*n(x.price);},0));
   if(!S.entries)S.entries={};
