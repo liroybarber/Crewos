@@ -44,7 +44,7 @@ function showPg(id){
 }
 function openM(id){ var el=document.getElementById(id); if(el)el.classList.add("on"); }
 function closeM(id){ var el=document.getElementById(id); if(el)el.classList.remove("on"); }
-function td(){ return new Date().toISOString().slice(0,10); }
+function td(){var d=new Date();var y=d.getFullYear();var m=String(d.getMonth()+1).padStart(2,"0");var day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day;}
 function ini(nm){ return (nm||"").split(" ").map(function(w){return w[0]||"";}).slice(0,2).join("").toUpperCase(); }
 function gsp(emp,sid){ if(emp.sp&&emp.sp[sid]!=null)return n(emp.sp[sid]); return n(emp.pct)||50; }
 function logout(){ ses=null; pin=""; lSel="owner"; renderLogin(); showPg("pg-login"); }
@@ -499,12 +499,6 @@ function rReport(){
   mt=ri(mt+ownerMonth); om=ri(om+ownerMonth);
   var goal=ri(n(S.goal)),pct=goal>0?Math.min(100,Math.round(mt/goal*100)):0;
   var gH=goal>0?"<div class=card><div style='display:flex;justify-content:space-between;margin-bottom:6px'><div style='font-size:14px;font-weight:700'>\u05d9\u05e2\u05d3 \u05d7\u05d5\u05d3\u05e9\u05d9</div><div style='color:var(--or);font-weight:800'>"+pct+"%</div></div><div class=pw><div class=pbr style='width:"+pct+"%'></div></div><div style='font-size:11px;color:var(--dm);margin-top:5px'>\u05e0\u05e9\u05d0\u05e8 "+formatMoney(Math.max(0,goal-mt))+"</div></div>":"";
-  var ym=new Date().toISOString().slice(0,7),days={};
-  (S.emps||[]).forEach(function(e){Object.entries((S.entries&&S.entries[e.id])||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+ri(n(p[1].total));});});
-  Object.entries(S.ownerEntries||{}).forEach(function(p){if(p[0].startsWith(ym))days[p[0]]=(days[p[0]]||0)+ri(n(p[1].total));});
-  var dks=Object.keys(days).sort(),mx=Math.max.apply(null,dks.map(function(k){return days[k];}).concat([1]));
-  var cH="";
-  if(dks.length){cH="<div class=cw3><div style='font-size:11px;color:var(--dm);margin-bottom:8px;font-weight:700'>\u05d4\u05db\u05e0\u05e1\u05d5\u05ea \u05d9\u05d5\u05de\u05d9\u05d5\u05ea</div><div class=cb2>";dks.forEach(function(k){cH+="<div class=bw><div class=bf style='height:"+Math.round(days[k]/mx*100)+"%'></div><div class=bl2>"+parseInt(k.slice(8))+"</div></div>";});cH+="</div></div>";}
   var mx2=Math.max.apply(null,(S.emps||[]).map(function(e){return calc(Object.values((S.entries&&S.entries[e.id])||{}),e).gross;}).concat([ownerMonth,1]));
   var cpH="<div class=card><div style='font-size:13px;font-weight:700;margin-bottom:14px'>\u05d4\u05e9\u05d5\u05d5\u05d0\u05d4</div>";
   cpH+="<div class=cbr><div class=cnr><span>"+S.ownerName+"</span><span style='color:var(--or)'>"+formatMoney(ownerMonth)+"</span></div><div class=cbg><div class=cf style='width:"+Math.round(ownerMonth/mx2*100)+"%;background:var(--or)'></div></div></div>";
@@ -512,7 +506,7 @@ function rReport(){
   cpH+="</div>";
   var mn=new Date().toLocaleDateString("he-IL",{month:"long",year:"numeric"});
   var tr=document.getElementById("t-report");
-  if(tr)tr.innerHTML="<div class=card><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'><div><div style='font-size:14px;font-weight:700'>\u05e1\u05d9\u05db\u05d5\u05dd \u05d7\u05d5\u05d3\u05e9</div><div style='font-size:11px;color:var(--dm)'>"+mn+"</div></div><button onclick='openM(\"m-goal\")' style='background:var(--btn);border:1px solid var(--br);color:var(--mu);padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700'>\u05d9\u05e2\u05d3</button></div><div class=stats>"+sb('\u05e1\u05d4"\u05db',formatMoney(mt),"","#E8782A")+sb("\u05e8\u05d5\u05d5\u05d7 \u05e9\u05dc\u05da",formatMoney(om),"","#10B981")+"</div></div>"+gH+cH+cpH;
+  if(tr)tr.innerHTML="<div class=card><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'><div><div style='font-size:14px;font-weight:700'>\u05e1\u05d9\u05db\u05d5\u05dd \u05d7\u05d5\u05d3\u05e9</div><div style='font-size:11px;color:var(--dm)'>"+mn+"</div></div><button onclick='openM(\"m-goal\")' style='background:var(--btn);border:1px solid var(--br);color:var(--mu);padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700'>\u05d9\u05e2\u05d3</button></div><div class=stats>"+sb('\u05e1\u05d4"\u05db',formatMoney(mt),"","#E8782A")+sb("\u05e8\u05d5\u05d5\u05d7 \u05e9\u05dc\u05da",formatMoney(om),"","#10B981")+"</div></div>"+gH+cpH;
 }
 
 /* ── HISTORY ── */
